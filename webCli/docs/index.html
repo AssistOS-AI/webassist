@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>webCli Docs</title>
+    <style>
+        body { font-family: sans-serif; line-height: 1.6; max-width: 880px; margin: 40px auto; padding: 20px; }
+        code { background: #f4f4f4; padding: 2px 4px; border-radius: 4px; }
+        .card { border: 1px solid #ddd; border-radius: 8px; padding: 20px; margin-bottom: 20px; }
+        a { color: #0b63ce; text-decoration: none; }
+        ul { padding-left: 20px; }
+    </style>
+</head>
+<body>
+    <h1>webCli Agent</h1>
+    <p>The visitor-facing agent for lead qualification, session tracking, and meeting escalation.</p>
+
+    <div class="card">
+        <h2>Runtime Entry Points</h2>
+        <ul>
+            <li><code>src/WebCliAgent.mjs</code> - AchillesAgentLib-backed agent factory and runtime.</li>
+            <li><code>src/index.mjs</code> - CLI entrypoint.</li>
+            <li><code>skills/</code> - Anthropic-compatible tool definitions and handlers.</li>
+            <li><code>tests/</code> - Skill and agent tests with dedicated fixtures.</li>
+        </ul>
+    </div>
+
+    <div class="card">
+        <h2>Specifications</h2>
+        <ul>
+            <li><a href="specs/DS000-vision.md">DS000 - Vision</a></li>
+            <li><a href="specs/DS001-data-structure.md">DS001 - Data Structure</a></li>
+            <li><a href="specs/DS002-skills.md">DS002 - Skills</a></li>
+            <li><a href="specs/DS003-integration.md">DS003 - Integration</a></li>
+            <li><a href="specs/DS004-skill-updateSession.md">DS004 - updateSession</a></li>
+            <li><a href="specs/DS005-skill-respondRequest.md">DS005 - respondRequest</a></li>
+            <li><a href="specs/DS006-skill-createLead.md">DS006 - createLead</a></li>
+            <li><a href="specs/DS007-skill-bookMeeting.md">DS007 - bookMeeting</a></li>
+        </ul>
+    </div>
+</body>
+</html>

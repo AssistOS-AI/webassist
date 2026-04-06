@@ -1,0 +1,24 @@
+# DS003 - Skill: leadInfo
+
+## Goal
+To display comprehensive profiling, contact information, and interaction history for a selected lead to the admin.
+
+## Mechanism
+An Anthropic-compatible tool used by the webAdmin agent when the owner requests more details about a specific lead.
+
+## Tool Definition
+- **Name**: `leadInfo`
+- **Description**: Retrieves the full profile, contact info, status, and related session history for a specific lead.
+- **Inputs**:
+  - `leadId` (string): The ID of the lead.
+
+## Output
+A JSON object or stringified summary containing:
+- The contents of the lead file (`data/leads/{leadId}.md`).
+- The contents of the corresponding session file (`data/sessions/{sessionId}.md`).
+
+## Execution Logic (Node.js)
+1. Read `data/leads/{leadId}.md`. If not found, return an error.
+2. Extract the `sessionId` from the lead file name or contents.
+3. Read the corresponding `data/sessions/{sessionId}.md`.
+4. Return the combined data to the LLM so it can answer the admin's query completely.

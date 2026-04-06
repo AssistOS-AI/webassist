@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>webAdmin Docs</title>
+    <style>
+        body { font-family: sans-serif; line-height: 1.6; max-width: 880px; margin: 40px auto; padding: 20px; }
+        code { background: #f4f4f4; padding: 2px 4px; border-radius: 4px; }
+        .card { border: 1px solid #ddd; border-radius: 8px; padding: 20px; margin-bottom: 20px; }
+        a { color: #0b63ce; text-decoration: none; }
+        ul { padding-left: 20px; }
+    </style>
+</head>
+<body>
+    <h1>webAdmin Agent</h1>
+    <p>The owner-facing agent for lead lifecycle management, lead inspection, and activity reporting.</p>
+
+    <div class="card">
+        <h2>Runtime Entry Points</h2>
+        <ul>
+            <li><code>src/WebAdminAgent.mjs</code> - AchillesAgentLib-backed agent factory and runtime.</li>
+            <li><code>src/index.mjs</code> - CLI entrypoint.</li>
+            <li><code>skills/</code> - Anthropic-compatible tool definitions and handlers.</li>
+            <li><code>tests/</code> - Skill and agent tests with dedicated fixtures.</li>
+        </ul>
+    </div>
+
+    <div class="card">
+        <h2>Specifications</h2>
+        <ul>
+            <li><a href="specs/DS000-vision.md">DS000 - Vision</a></li>
+            <li><a href="specs/DS001-skills.md">DS001 - Skills</a></li>
+            <li><a href="specs/DS002-skill-updateLead.md">DS002 - updateLead</a></li>
+            <li><a href="specs/DS003-skill-leadInfo.md">DS003 - leadInfo</a></li>
+            <li><a href="specs/DS004-skill-statistics.md">DS004 - statistics</a></li>
+            <li><a href="specs/DS005-skill-news.md">DS005 - news</a></li>
+        </ul>
+    </div>
+</body>
+</html>
