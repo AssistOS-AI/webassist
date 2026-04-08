@@ -11,14 +11,14 @@ test('bookMeeting returns the owner configuration and errors on missing config',
     t.after(async () => sandbox.cleanup());
 
     const successResult = await handler({ sessionId: 'session1' }, sandbox.dataDir);
-    assert.equal(successResult.success, true);
-    assert.match(successResult.configData, /Calendar link: https:\/\/cal\.example\.com\/webassist-demo/);
+    assert.match(successResult, /Calendar link: https:\/\/cal\.example\.com\/webassist-demo/);
 
     const configDir = path.join(sandbox.dataDir, 'config');
     await fs.rm(configDir, { recursive: true, force: true });
     await fs.mkdir(configDir, { recursive: true });
 
-    const emptyResult = await handler({ sessionId: 'session1' }, sandbox.dataDir);
-    assert.equal(emptyResult.success, false);
-    assert.match(emptyResult.error, /No configuration found/);
+    await assert.rejects(
+        () => handler({ sessionId: 'session1' }, sandbox.dataDir),
+        /No configuration found/
+    );
 });

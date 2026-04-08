@@ -12,6 +12,12 @@ The `data/` folder is the persistent storage for the webCli agent. It is exclude
 ## Session File Specification (sessionId.md)
 Each file in `sessions/` must follow this mandatory Markdown structure:
 
+### Session ID Lifecycle
+- `sessionId` can be provided explicitly by the caller.
+- If omitted at CLI launcher level, `webCli/bin/web-cli` generates it automatically.
+- In interactive CLI mode, the same generated/provided `sessionId` is reused for all turns until the process exits.
+- In MCP mode (`-mcp`), one request uses one `sessionId` and exits.
+
 ### 1. Profile
 Contains a list of filenames from `profilesInfo/` that are currently considered relevant to this session. 
 - **Initialization**: Can start with multiple likely profiles.

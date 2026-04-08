@@ -37,6 +37,13 @@ function createFakeWebCliLLM() {
                 return 'Sigur — va putem ajuta cu integrarea API-ului. Mai jos gasiti linkul de programare.';
             }
 
+            if (promptText.includes(promptKinds.historyTranslation)) {
+                return {
+                    userMessageEnglish: 'Hello, I want to integrate your API. I am Alice, alice@example.com. Can we schedule a discussion?',
+                    agentResponseEnglish: 'Sure — we can help with API integration. Below you can find the scheduling link.',
+                };
+            }
+
             throw new Error(`Unexpected prompt: ${promptText}`);
         },
     };
@@ -65,7 +72,7 @@ test('webCli agent loads AchillesAgentLib and executes a full visitor turn', asy
     assert.equal(result.lead.shouldCreate, true);
     assert.equal(result.lead.leadId, 'visitor-42-lead.md');
     assert.equal(result.meeting.shouldOffer, true);
-    assert.equal(llmAgent.calls.length, 2);
+    assert.equal(llmAgent.calls.length, 3);
 
     const leadContent = await fs.readFile(
         path.join(sandbox.dataDir, 'leads', 'visitor-42-lead.md'),
@@ -79,6 +86,6 @@ test('webCli agent loads AchillesAgentLib and executes a full visitor turn', asy
         'utf8'
     );
     assert.match(sessionContent, /- Developer\.md/);
-    assert.match(sessionContent, /Buna, vreau sa integrez API-ul vostru/);
-    assert.match(sessionContent, /Mai jos gasiti linkul de programare/);
+    assert.match(sessionContent, /Hello, I want to integrate your API/);
+    assert.match(sessionContent, /Below you can find the scheduling link/);
 });

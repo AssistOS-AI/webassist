@@ -11,6 +11,7 @@ import { handler as updateSessionHandler, definition as updateSessionDefinition 
 
 const WEBCLI_DECISION_PROMPT = '[WEBCLI_DECISION_PROMPT]';
 const WEBCLI_FINAL_RESPONSE_PROMPT = '[WEBCLI_FINAL_RESPONSE_PROMPT]';
+const WEBCLI_HISTORY_TRANSLATION_PROMPT = '[WEBCLI_HISTORY_TRANSLATION_PROMPT]';
 
 function getDefaultAgentRoot() {
     return path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -81,6 +82,24 @@ function normalizeDecision(decision) {
     };
 }
 
+function normalizeHistoryTranslation(translation) {
+    if (!translation || typeof translation !== 'object') {
+        throw new Error('webCli history translation prompt must return a JSON object.');
+    }
+
+    const userMessageEnglish = String(translation.userMessageEnglish ?? '').trim();
+    const agentResponseEnglish = String(translation.agentResponseEnglish ?? '').trim();
+
+    if (!userMessageEnglish || !agentResponseEnglish) {
+        throw new Error('webCli history translation prompt must provide both English history fields.');
+    }
+
+    return {
+        userMessageEnglish,
+        agentResponseEnglish,
+    };
+}
+
 function buildDecisionPrompt({ sessionId, userMessage, context }) {
     return `${WEBCLI_DECISION_PROMPT}
 You are the webCli visitor assistant for a website.
@@ -122,7 +141,7 @@ Current session state:
 ${context.currentSessionStateText}`;
 }
 
-function buildFinalResponsePrompt({ userMessage, decision, meetingData }) {
+function buildFinalResponsePrompt({ userMessage, decision, meetingConfigData }) {
     return `${WEBCLI_FINAL_RESPONSE_PROMPT}
 Write the final visitor response in the same language as the visitor's last message.
 Use the draft reply and the structured decision below.
@@ -135,7 +154,28 @@ Structured decision:
 ${JSON.stringify(decision, null, 2)}
 
 Meeting data:
-${meetingData ? meetingData.configData : 'No meeting data should be included.'}`;
+${meetingConfigData || 'No meeting data should be included.'}`;
+}
+
+function buildHistoryTranslationPrompt({ userMessage, agentResponse }) {
+    return `${WEBCLI_HISTORY_TRANSLATION_PROMPT}
+Translate both messages to English for persistent storage.
+Return JSON only with this exact shape:
+{
+  "userMessageEnglish": "...",
+  "agentResponseEnglish": "..."
+}
+
+Rules:
+- preserve original intent and factual details;
+- keep concise and natural English;
+- do not add information.
+
+User message:
+${userMessage}
+
+Agent response:
+${agentResponse}`;
 }
 
 function buildBaseAgentOptions({ agentRoot, llmAgent, logger, sessionConfig, recursiveAgentOptions }) {
@@ -225,9 +265,6 @@ export async function createWebCliAgent({
             let meetingResult = null;
             if (decision.meeting.shouldOffer) {
                 meetingResult = await bookMeetingHandler({ sessionId }, this.dataDir);
-                if (!meetingResult.success) {
-                    throw new Error(meetingResult.error);
-                }
             }
 
             const response = await executeTextPrompt(
@@ -235,15 +272,26 @@ export async function createWebCliAgent({
                 buildFinalResponsePrompt({
                     userMessage: message,
                     decision,
-                    meetingData: meetingResult,
+                    meetingConfigData: meetingResult,
                 }),
                 { mode, sessionMemory }
             );
 
+            const historyTranslation = normalizeHistoryTranslation(
+                await executeJsonPrompt(
+                    this.llmAgent,
+                    buildHistoryTranslationPrompt({
+                        userMessage: message,
+                        agentResponse: response,
+                    }),
+                    { mode, sessionMemory }
+                )
+            );
+
             const sessionResult = await updateSessionHandler({
                 sessionId,
-                userMessage: message,
-                agentResponse: response,
+                userMessage: historyTranslation.userMessageEnglish,
+                agentResponse: historyTranslation.agentResponseEnglish,
                 profiles: decision.profiles,
                 profileDetails: decision.profileDetails,
             }, this.dataDir);
@@ -258,7 +306,7 @@ export async function createWebCliAgent({
                     ? { shouldCreate: true, ...leadResult }
                     : { shouldCreate: false },
                 meeting: meetingResult
-                    ? { shouldOffer: true, ...meetingResult }
+                    ? { shouldOffer: true, configData: meetingResult }
                     : { shouldOffer: false },
                 session: sessionResult.session,
             };
@@ -271,4 +319,5 @@ export async function createWebCliAgent({
 export const promptKinds = {
     decision: WEBCLI_DECISION_PROMPT,
     finalResponse: WEBCLI_FINAL_RESPONSE_PROMPT,
+    historyTranslation: WEBCLI_HISTORY_TRANSLATION_PROMPT,
 };

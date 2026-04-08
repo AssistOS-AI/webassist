@@ -17,8 +17,8 @@ The **webCli** agent uses specific skills to manage the conversation flow and da
   - Formulate strategic questions to complete the user's profiling as defined in `profilesInfo/`.
 
 ## Skill: createLead
-- **Function**: Automatically generates a lead entry in `leads/`.
-- **Logic**: Triggered when a visitor provides contact information and is identified as "valuable" based on the requirements in `profilesInfo/`.
+- **Function**: Automatically creates a lead entry in `leads/`, or updates the same entry if it already exists for the same session.
+- **Logic**: Triggered when a visitor provides contact information and is identified as "valuable" based on the requirements in `profilesInfo/`. The lead file is keyed by `sessionId`, so repeated qualification updates that same lead record.
 
 ## Skill: bookMeeting
 - **Function**: Initiates the transition to a real-person interaction.

@@ -18,14 +18,14 @@ export const definition = {
 };
 
 export async function handler({ sessionId }, dataDir = './data') {
-    const configFiles = await readMarkdownDirectory(path.join(dataDir, 'config'));
-    if (configFiles.length === 0) {
-        return { success: false, error: 'No configuration found to book a meeting.' };
+    if (!sessionId) {
+        throw new Error('bookMeeting requires a sessionId.');
     }
 
-    return {
-        success: true,
-        sessionId,
-        configData: combineMarkdownFiles(configFiles, 'Config'),
-    };
+    const configFiles = await readMarkdownDirectory(path.join(dataDir, 'config'));
+    if (configFiles.length === 0) {
+        throw new Error('No configuration found to book a meeting.');
+    }
+
+    return combineMarkdownFiles(configFiles, 'Config');
 }
