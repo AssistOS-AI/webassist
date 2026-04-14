@@ -34,7 +34,7 @@ The **webCli** agent is implemented as a Node.js CLI tool with a single `session
 - `--data-dir <dir>` / `--data-dir=<dir>`: Override the runtime data directory used for `config/`, `info/`, `profilesInfo/`, `leads/`, and `sessions/`.
 - `--agent-root <dir>` / `--agent-root=<dir>`: Override the agent root used by runtime initialization.
   - This changes where default `data/` is resolved when `--data-dir` is not provided.
-  - This also changes where Achilles loader resolution starts (library lookup remains in the parent directory of the effective agent root).
+  - This changes the runtime root used for agent initialization and default skill discovery scope.
 - `-h` / `--help`: Print CLI usage and exit.
 - `--`: Stop option parsing and treat all remaining arguments as positional message text.
 
@@ -62,10 +62,10 @@ MCP input note:
 
 ## Library: AchillesAgentLib
 - **Mandatory Usage**: Access to LLMs must be through this library.
-- **Loader Mechanism**: The agent's loader must check for the existence of `AchillesAgentLib` or `achillesAgentLib` in the parent directory.
+- **Import Mechanism**: The runtime imports AchillesAgentLib directly from resolved `node_modules`.
 - **Loading Logic**:
-  - Scan `../` for `AchillesAgentLib` or `achillesAgentLib`.
-  - Dynamically load the library if found.
+  - Use direct import syntax: `import { RecursiveSkilledAgent } from "achillesAgentLib";`.
+  - Do not use filesystem scanning loaders for webCli Achilles resolution.
 
 ## Base Class: RecursiveSkilledAgent
 - **Functionality**: The agent extends or uses `RecursiveSkilledAgent` to manage the conversation loop and skill execution.

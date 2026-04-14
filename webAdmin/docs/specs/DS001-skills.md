@@ -2,6 +2,10 @@
 
 The **webAdmin** agent interacts with the information collected by **webCli**.
 
+Runtime dependency note:
+- `webAdmin` uses AchillesAgentLib via direct package import from `node_modules`.
+- The agent runtime extends `RecursiveSkilledAgent` imported from `achillesAgentLib`.
+
 ## Skill: updateLead
 - **Function**: Manages the lifecycle of a lead in `leads/`.
 - **States**: Transitions a lead from `new` to `invalid`, `contacted`, or `converted`.

@@ -6,7 +6,7 @@ import path from 'node:path';
 import { createWebAdminAgent, promptKinds } from '../src/WebAdminAgent.mjs';
 import { createWebAdminSandbox } from './helpers.mjs';
 
-function createFakeWebAdminLLM() {
+function createFakeWebAdminLLM(promptKinds) {
     return {
         calls: [],
         async executePrompt(promptText) {
@@ -47,7 +47,7 @@ test('webAdmin agent loads achillesAgentLib and executes owner requests', async 
     const sandbox = await createWebAdminSandbox();
     t.after(async () => sandbox.cleanup());
 
-    const llmAgent = createFakeWebAdminLLM();
+    const llmAgent = createFakeWebAdminLLM(promptKinds);
     const agent = await createWebAdminAgent({
         agentRoot: sandbox.agentRoot,
         dataDir: sandbox.dataDir,

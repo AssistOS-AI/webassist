@@ -5,7 +5,6 @@ import { fileURLToPath } from 'node:url';
 
 const FIXTURES_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), 'fixtures');
 const SEED_DATA_DIR = path.join(FIXTURES_DIR, 'seed-data');
-const FAKE_LIBRARY_DIR = path.join(FIXTURES_DIR, 'AchillesAgentLib');
 
 export async function createWebCliSandbox() {
     const sandboxRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'webcli-agent-'));
@@ -14,7 +13,6 @@ export async function createWebCliSandbox() {
 
     await fs.mkdir(agentRoot, { recursive: true });
     await fs.cp(SEED_DATA_DIR, dataDir, { recursive: true });
-    await fs.cp(FAKE_LIBRARY_DIR, path.join(sandboxRoot, 'AchillesAgentLib'), { recursive: true });
 
     return {
         sandboxRoot,

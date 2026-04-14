@@ -10,35 +10,6 @@ const TESTS_DIR = path.dirname(fileURLToPath(import.meta.url));
 const WEBCLI_ROOT = path.resolve(TESTS_DIR, '..');
 const REPO_ROOT = path.resolve(WEBCLI_ROOT, '..');
 const CLI_ENTRY = path.join(WEBCLI_ROOT, 'src', 'index.mjs');
-const FAKE_ACHILLES_SOURCE = path.join(TESTS_DIR, 'fixtures', 'AchillesAgentLib');
-const ACHILLES_TARGET = path.join(REPO_ROOT, 'AchillesAgentLib');
-
-async function pathExists(targetPath) {
-    try {
-        await fs.stat(targetPath);
-        return true;
-    } catch {
-        return false;
-    }
-}
-
-async function installFakeAchillesLibrary() {
-    const backupPath = `${ACHILLES_TARGET}.backup-webcli-tests-${Date.now()}`;
-    const hadOriginal = await pathExists(ACHILLES_TARGET);
-
-    if (hadOriginal) {
-        await fs.rename(ACHILLES_TARGET, backupPath);
-    }
-
-    await fs.cp(FAKE_ACHILLES_SOURCE, ACHILLES_TARGET, { recursive: true });
-
-    return async function cleanup() {
-        await fs.rm(ACHILLES_TARGET, { recursive: true, force: true });
-        if (hadOriginal) {
-            await fs.rename(backupPath, ACHILLES_TARGET);
-        }
-    };
-}
 
 function runCli(args, { stdin = '', cwd = REPO_ROOT } = {}) {
     return new Promise((resolve) => {
@@ -74,11 +45,6 @@ async function assertDirectoryExists(targetPath) {
 }
 
 test('mcp mode supports required CLI variants', async (t) => {
-    const cleanupAchilles = await installFakeAchillesLibrary();
-    t.after(async () => {
-        await cleanupAchilles();
-    });
-
     const defaultDataDir = path.join(WEBCLI_ROOT, 'data');
     const createdDefaultSessions = [];
 
@@ -158,10 +124,8 @@ test('mcp mode supports required CLI variants', async (t) => {
     await t.test('runs -mcp with --agent-root override', async (sub) => {
         const customRuntimeRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'webcli-agent-root-'));
         const customAgentRoot = path.join(customRuntimeRoot, 'agent-root');
-        const customAchillesDir = path.join(customRuntimeRoot, 'AchillesAgentLib');
 
         await fs.mkdir(customAgentRoot, { recursive: true });
-        await fs.cp(FAKE_ACHILLES_SOURCE, customAchillesDir, { recursive: true });
 
         sub.after(async () => {
             await fs.rm(customRuntimeRoot, { recursive: true, force: true });

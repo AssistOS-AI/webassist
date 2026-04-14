@@ -1,7 +1,7 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { loadAchillesAgentLib } from '../../shared/achillesLoader.mjs';
+import { RecursiveSkilledAgent } from "achillesAgentLib";
 import { resolveDataDir } from '../../shared/dataStore.mjs';
 import { executeJsonPrompt, executeTextPrompt } from '../../shared/llmAdapter.mjs';
 import { handler as bookMeetingHandler, definition as bookMeetingDefinition } from '../skills/bookMeeting.mjs';
@@ -187,10 +187,6 @@ function buildBaseAgentOptions({ agentRoot, llmAgent, logger, sessionConfig, rec
         ...(recursiveAgentOptions ?? {}),
     };
 
-    if (llmAgent) {
-        baseOptions.llmAgent = llmAgent;
-    }
-
     return baseOptions;
 }
 
@@ -203,9 +199,8 @@ export async function createWebCliAgent({
     recursiveAgentOptions = {},
 } = {}) {
     const resolvedAgentRoot = path.resolve(agentRoot);
-    const achilles = await loadAchillesAgentLib(resolvedAgentRoot);
 
-    class WebCliAgent extends achilles.RecursiveSkilledAgent {
+    class WebCliAgent extends RecursiveSkilledAgent {
         constructor() {
             super(buildBaseAgentOptions({
                 agentRoot: resolvedAgentRoot,
@@ -214,6 +209,10 @@ export async function createWebCliAgent({
                 sessionConfig,
                 recursiveAgentOptions,
             }));
+
+            if (llmAgent) {
+                this.llmAgent = llmAgent;
+            }
 
             this.agentRoot = resolvedAgentRoot;
             this.dataDir = resolveDataDir(resolvedAgentRoot, dataDir);
@@ -224,9 +223,8 @@ export async function createWebCliAgent({
                 bookMeeting: { definition: bookMeetingDefinition, handler: bookMeetingHandler },
             };
             this.achilles = {
-                libraryDir: achilles.libraryDir,
-                entryPath: achilles.entryPath,
-                libraryName: achilles.libraryName,
+                libraryName: 'achillesAgentLib',
+                source: 'node_modules',
             };
         }
 

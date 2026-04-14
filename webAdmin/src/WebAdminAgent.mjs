@@ -1,7 +1,7 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { loadAchillesAgentLib } from '../../shared/achillesLoader.mjs';
+import { RecursiveSkilledAgent } from "achillesAgentLib";
 import { readMarkdownDirectory, resolveDataDir } from '../../shared/dataStore.mjs';
 import { executeJsonPrompt, executeTextPrompt } from '../../shared/llmAdapter.mjs';
 import { handler as leadInfoHandler, definition as leadInfoDefinition } from '../skills/leadInfo.mjs';
@@ -26,10 +26,6 @@ function buildBaseAgentOptions({ agentRoot, llmAgent, logger, sessionConfig, rec
         sessionConfig,
         ...(recursiveAgentOptions ?? {}),
     };
-
-    if (llmAgent) {
-        baseOptions.llmAgent = llmAgent;
-    }
 
     return baseOptions;
 }
@@ -109,9 +105,8 @@ export async function createWebAdminAgent({
     recursiveAgentOptions = {},
 } = {}) {
     const resolvedAgentRoot = path.resolve(agentRoot);
-    const achilles = await loadAchillesAgentLib(resolvedAgentRoot);
 
-    class WebAdminAgent extends achilles.RecursiveSkilledAgent {
+    class WebAdminAgent extends RecursiveSkilledAgent {
         constructor() {
             super(buildBaseAgentOptions({
                 agentRoot: resolvedAgentRoot,
@@ -120,6 +115,10 @@ export async function createWebAdminAgent({
                 sessionConfig,
                 recursiveAgentOptions,
             }));
+
+            if (llmAgent) {
+                this.llmAgent = llmAgent;
+            }
 
             this.agentRoot = resolvedAgentRoot;
             this.dataDir = resolveDataDir(resolvedAgentRoot, dataDir);
@@ -130,9 +129,8 @@ export async function createWebAdminAgent({
                 news: { definition: newsDefinition, handler: newsHandler },
             };
             this.achilles = {
-                libraryDir: achilles.libraryDir,
-                entryPath: achilles.entryPath,
-                libraryName: achilles.libraryName,
+                libraryName: 'achillesAgentLib',
+                source: 'node_modules',
             };
         }
 

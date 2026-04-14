@@ -6,7 +6,7 @@
 - **Versioning DS**: `DS000` is always the vision/overview. Subsequent numbers (001, 002, etc.) define specific aspects.
 - **Technology Stack**: Node.js (ES Modules, `.mjs` syntax) using `async/await`.
 - **Dependencies**: Minimize dependencies. Use native Node.js features whenever possible.
-- **LLM Access**: Use the `AchillesAgentLib` library. The loader must check for `AchillesAgentLib` or `achillesAgentLib` in the parent directory.
+- **LLM Access**: Use the `AchillesAgentLib` library imported directly from resolved `node_modules`.
 - **Base Architecture**: All agents must extend or use `RecursiveSkilledAgent` to handle tasks via specialized skills.
 - **No Implicit Fallbacks**: When behavior or code is explicitly changed/removed by request, do not keep or introduce fallback behavior unless the user explicitly asks for a fallback.
 

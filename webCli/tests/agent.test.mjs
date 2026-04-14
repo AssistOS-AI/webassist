@@ -6,7 +6,7 @@ import path from 'node:path';
 import { createWebCliAgent, promptKinds } from '../src/WebCliAgent.mjs';
 import { createWebCliSandbox } from './helpers.mjs';
 
-function createFakeWebCliLLM() {
+function createFakeWebCliLLM(promptKinds) {
     return {
         calls: [],
         async executePrompt(promptText) {
@@ -53,7 +53,7 @@ test('webCli agent loads AchillesAgentLib and executes a full visitor turn', asy
     const sandbox = await createWebCliSandbox();
     t.after(async () => sandbox.cleanup());
 
-    const llmAgent = createFakeWebCliLLM();
+    const llmAgent = createFakeWebCliLLM(promptKinds);
     const agent = await createWebCliAgent({
         agentRoot: sandbox.agentRoot,
         dataDir: sandbox.dataDir,
@@ -65,7 +65,7 @@ test('webCli agent loads AchillesAgentLib and executes a full visitor turn', asy
         message: 'Buna, vreau sa integrez API-ul vostru. Sunt Alice, alice@example.com. Putem programa o discutie?',
     });
 
-    assert.equal(agent.achilles.libraryName, 'AchillesAgentLib');
+    assert.equal(agent.achilles.libraryName, 'achillesAgentLib');
     assert.equal(result.success, true);
     assert.match(result.response, /integrarea API-ului/);
     assert.deepEqual(result.profiles, ['Developer.md']);

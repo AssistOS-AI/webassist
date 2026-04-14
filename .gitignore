@@ -1,7 +1,14 @@
 # Ignore runtime data folders
 /webCli/data/
-/webAdmin/data/
+/webCli/package.json
+/webCli/package-lock.json
+/webCli/node_modules/
 
+/webAdmin/data/
+/webAdmin/package.json
+/webAdmin/package-lock.json
+/webAdmin/node_modules/
+.idea
 # Node.js
 node_modules/
 npm-debug.log*
