@@ -1,0 +1,214 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
+import { spawn } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+
+const TESTS_DIR = path.dirname(fileURLToPath(import.meta.url));
+const WEBCLI_ROOT = path.resolve(TESTS_DIR, '..');
+const REPO_ROOT = path.resolve(WEBCLI_ROOT, '..');
+const CLI_ENTRY = path.join(WEBCLI_ROOT, 'src', 'index.mjs');
+const FAKE_ACHILLES_SOURCE = path.join(TESTS_DIR, 'fixtures', 'AchillesAgentLib');
+const ACHILLES_TARGET = path.join(REPO_ROOT, 'AchillesAgentLib');
+
+async function pathExists(targetPath) {
+    try {
+        await fs.stat(targetPath);
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+async function installFakeAchillesLibrary() {
+    const backupPath = `${ACHILLES_TARGET}.backup-webcli-tests-${Date.now()}`;
+    const hadOriginal = await pathExists(ACHILLES_TARGET);
+
+    if (hadOriginal) {
+        await fs.rename(ACHILLES_TARGET, backupPath);
+    }
+
+    await fs.cp(FAKE_ACHILLES_SOURCE, ACHILLES_TARGET, { recursive: true });
+
+    return async function cleanup() {
+        await fs.rm(ACHILLES_TARGET, { recursive: true, force: true });
+        if (hadOriginal) {
+            await fs.rename(backupPath, ACHILLES_TARGET);
+        }
+    };
+}
+
+function runCli(args, { stdin = '', cwd = REPO_ROOT } = {}) {
+    return new Promise((resolve) => {
+        const child = spawn(process.execPath, [CLI_ENTRY, ...args], {
+            cwd,
+            env: process.env,
+            stdio: ['pipe', 'pipe', 'pipe'],
+        });
+
+        let stdout = '';
+        let stderr = '';
+        child.stdout.on('data', (chunk) => {
+            stdout += chunk.toString();
+        });
+        child.stderr.on('data', (chunk) => {
+            stderr += chunk.toString();
+        });
+
+        child.on('close', (code) => {
+            resolve({ code: code ?? 0, stdout, stderr });
+        });
+
+        if (stdin) {
+            child.stdin.write(stdin);
+        }
+        child.stdin.end();
+    });
+}
+
+async function assertDirectoryExists(targetPath) {
+    const stats = await fs.stat(targetPath);
+    assert.equal(stats.isDirectory(), true);
+}
+
+test('mcp mode supports required CLI variants', async (t) => {
+    const cleanupAchilles = await installFakeAchillesLibrary();
+    t.after(async () => {
+        await cleanupAchilles();
+    });
+
+    const defaultDataDir = path.join(WEBCLI_ROOT, 'data');
+    const createdDefaultSessions = [];
+
+    t.after(async () => {
+        await Promise.all(
+            createdDefaultSessions.map((sessionId) => fs.rm(path.join(defaultDataDir, 'sessions', `${sessionId}.md`), {
+                force: true,
+            }))
+        );
+    });
+
+    await t.test('prints help with -h', async () => {
+        const result = await runCli(['-h']);
+        assert.equal(result.code, 0);
+        assert.match(result.stdout, /Usage:/);
+        assert.match(result.stdout, /-mcp/);
+        assert.match(result.stdout, /--agent-root <dir>/);
+    });
+
+    await t.test('runs -mcp with explicit --session-id without --json and without --data-dir', async () => {
+        const sessionId = `mcp-explicit-${Date.now()}`;
+        const result = await runCli(['-mcp', '--session-id', sessionId, 'Hello from explicit session']);
+
+        assert.equal(result.code, 0, result.stderr);
+        assert.equal(result.stdout.trim().startsWith('{'), false);
+
+        await assertDirectoryExists(defaultDataDir);
+        const sessionPath = path.join(defaultDataDir, 'sessions', `${sessionId}.md`);
+        const sessionContent = await fs.readFile(sessionPath, 'utf8');
+        assert.match(sessionContent, /### 3\. History/);
+        createdDefaultSessions.push(sessionId);
+    });
+
+    await t.test('runs -mcp without --session-id with --json and without --data-dir', async () => {
+        const result = await runCli(['-mcp', '--json', 'Hello with generated session']);
+
+        assert.equal(result.code, 0, result.stderr);
+        const payload = JSON.parse(result.stdout);
+        assert.equal(payload.success, true);
+        assert.match(payload.sessionId, /^session-/);
+
+        await assertDirectoryExists(defaultDataDir);
+        const sessionPath = path.join(defaultDataDir, 'sessions', `${payload.sessionId}.md`);
+        const sessionContent = await fs.readFile(sessionPath, 'utf8');
+        assert.match(sessionContent, /### 3\. History/);
+        createdDefaultSessions.push(payload.sessionId);
+    });
+
+    await t.test('runs -mcp with --data-dir override', async (sub) => {
+        const customDataDir = await fs.mkdtemp(path.join(os.tmpdir(), 'webcli-mcp-data-'));
+        sub.after(async () => {
+            await fs.rm(customDataDir, { recursive: true, force: true });
+        });
+
+        const sessionId = `mcp-custom-${Date.now()}`;
+        const result = await runCli([
+            '-mcp',
+            '--json',
+            '--session-id',
+            sessionId,
+            '--data-dir',
+            customDataDir,
+            'Hello with custom data dir',
+        ]);
+
+        assert.equal(result.code, 0, result.stderr);
+        const payload = JSON.parse(result.stdout);
+        assert.equal(payload.success, true);
+        assert.equal(payload.sessionId, sessionId);
+
+        await assertDirectoryExists(customDataDir);
+        const sessionPath = path.join(customDataDir, 'sessions', `${sessionId}.md`);
+        const sessionContent = await fs.readFile(sessionPath, 'utf8');
+        assert.match(sessionContent, /### 3\. History/);
+    });
+
+    await t.test('runs -mcp with --agent-root override', async (sub) => {
+        const customRuntimeRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'webcli-agent-root-'));
+        const customAgentRoot = path.join(customRuntimeRoot, 'agent-root');
+        const customAchillesDir = path.join(customRuntimeRoot, 'AchillesAgentLib');
+
+        await fs.mkdir(customAgentRoot, { recursive: true });
+        await fs.cp(FAKE_ACHILLES_SOURCE, customAchillesDir, { recursive: true });
+
+        sub.after(async () => {
+            await fs.rm(customRuntimeRoot, { recursive: true, force: true });
+        });
+
+        const sessionId = `mcp-agent-root-${Date.now()}`;
+        const result = await runCli([
+            '-mcp',
+            '--json',
+            '--session-id',
+            sessionId,
+            '--agent-root',
+            customAgentRoot,
+            'Hello with custom agent root',
+        ]);
+
+        assert.equal(result.code, 0, result.stderr);
+        const payload = JSON.parse(result.stdout);
+        assert.equal(payload.success, true);
+        assert.equal(payload.sessionId, sessionId);
+
+        const expectedDataDir = path.join(customAgentRoot, 'data');
+        await assertDirectoryExists(expectedDataDir);
+        const sessionPath = path.join(expectedDataDir, 'sessions', `${sessionId}.md`);
+        const sessionContent = await fs.readFile(sessionPath, 'utf8');
+        assert.match(sessionContent, /### 3\. History/);
+    });
+
+    await t.test('supports -- to separate options from message', async () => {
+        const sessionId = `mcp-separator-${Date.now()}`;
+        const result = await runCli([
+            '-mcp',
+            '--json',
+            '--session-id',
+            sessionId,
+            '--',
+            '--this starts like an option but is message text',
+        ]);
+
+        assert.equal(result.code, 0, result.stderr);
+        const payload = JSON.parse(result.stdout);
+        assert.equal(payload.success, true);
+        assert.equal(payload.sessionId, sessionId);
+
+        const sessionPath = path.join(defaultDataDir, 'sessions', `${sessionId}.md`);
+        const sessionContent = await fs.readFile(sessionPath, 'utf8');
+        assert.match(sessionContent, /### 3\. History/);
+        createdDefaultSessions.push(sessionId);
+    });
+});

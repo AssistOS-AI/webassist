@@ -2,6 +2,11 @@
 
 The `data/` folder is the persistent storage for the webCli agent. It is excluded from version control via `.gitignore`.
 
+Runtime note:
+- By default, `data/` is resolved under the webCli agent root.
+- `--data-dir` can override this location explicitly.
+- `--agent-root` changes the base root used for default `data/` resolution.
+
 ## Data Subfolders
 - **config/**: Contains `owner.md` or similar files with site owner contact details and calendar/meeting links.
 - **info/**: General knowledge base for the agent. Markdown files containing details about the user, company, or site services.
@@ -14,7 +19,7 @@ Each file in `sessions/` must follow this mandatory Markdown structure:
 
 ### Session ID Lifecycle
 - `sessionId` can be provided explicitly by the caller.
-- If omitted at CLI launcher level, `webCli/bin/web-cli` generates it automatically.
+- If omitted at CLI launcher level, `webCli/src/index.mjs` generates it automatically.
 - In interactive CLI mode, the same generated/provided `sessionId` is reused for all turns until the process exits.
 - In MCP mode (`-mcp`), one request uses one `sessionId` and exits.
 

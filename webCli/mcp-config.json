@@ -1,0 +1,41 @@
+{
+    "tools": [
+        {
+            "name": "web_cli_chat",
+            "title": "Web CLI Chat",
+            "description": "Execute a one-shot webCli request in MCP mode.",
+            "command": "webCli/src/index.mjs",
+            "cwd": "workspace",
+            "env": {
+                "TOOL_NAME": "web_cli_chat"
+            },
+            "inputSchema": {
+                "message": {
+                    "type": "string",
+                    "description": "User message sent to webCli",
+                    "optional": false
+                },
+                "sessionId": {
+                    "type": "string",
+                    "description": "Optional session id to reuse",
+                    "optional": true
+                },
+                "json": {
+                    "type": "boolean",
+                    "description": "Return JSON output from webCli",
+                    "optional": true
+                },
+                "dataDir": {
+                    "type": "string",
+                    "description": "Optional data directory override",
+                    "optional": true
+                },
+                "agentRoot": {
+                    "type": "string",
+                    "description": "Optional agent root override",
+                    "optional": true
+                }
+            }
+        }
+    ]
+}

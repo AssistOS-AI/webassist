@@ -1,65 +1,301 @@
+#!/usr/bin/env node
+
+import fs from 'node:fs/promises';
+import { randomBytes } from 'node:crypto';
 import path from 'node:path';
+import readline from 'node:readline';
 import { fileURLToPath } from 'node:url';
 
 import { createWebCliAgent } from './WebCliAgent.mjs';
 
+function printUsage() {
+    process.stdout.write(`Usage:\n  webCli/src/index.mjs "message"\n  webCli/src/index.mjs -mcp "message"\n\nOptions:\n  -mcp                         Run a single request and exit\n  --session-id <id>            Reuse a specific session id\n  --json                       Print JSON output from runtime\n  --data-dir <dir>             Override data directory\n  --agent-root <dir>           Override agent root directory\n  -h, --help                   Show this help\n`);
+}
+
+function generateSessionId() {
+    const timestamp = new Date().toISOString().replace(/[-:.]/g, '').replace(/\.\d+Z$/, 'Z');
+    const nonce = randomBytes(4).toString('hex');
+    return `session-${timestamp}-${nonce}`;
+}
+
 function parseArguments(argv) {
-    const flags = {};
     const positionals = [];
+    const options = {
+        mode: 'interactive',
+        sessionId: '',
+        json: false,
+        dataDir: '',
+        agentRoot: '',
+        help: false,
+    };
 
     for (let index = 0; index < argv.length; index += 1) {
-        const argument = argv[index];
-        if (!argument.startsWith('--')) {
-            positionals.push(argument);
+        const token = argv[index];
+
+        if (token === '--') {
+            for (let cursor = index + 1; cursor < argv.length; cursor += 1) {
+                positionals.push(argv[cursor]);
+            }
+            break;
+        }
+
+        if (token === '-mcp') {
+            options.mode = 'mcp';
             continue;
         }
 
-        const [rawKey, inlineValue] = argument.slice(2).split('=');
-        if (inlineValue !== undefined) {
-            flags[rawKey] = inlineValue;
+        if (token === '--json') {
+            options.json = true;
             continue;
         }
 
-        const nextValue = argv[index + 1];
-        if (nextValue && !nextValue.startsWith('--')) {
-            flags[rawKey] = nextValue;
+        if (token === '-h' || token === '--help') {
+            options.help = true;
+            continue;
+        }
+
+        if (token.startsWith('--session-id=')) {
+            options.sessionId = token.slice('--session-id='.length);
+            continue;
+        }
+
+        if (token === '--session-id') {
+            const value = argv[index + 1];
+            if (!value) {
+                throw new Error('Missing value for --session-id');
+            }
+            options.sessionId = value;
             index += 1;
             continue;
         }
 
-        flags[rawKey] = true;
+        if (token.startsWith('--data-dir=')) {
+            options.dataDir = token.slice('--data-dir='.length);
+            continue;
+        }
+
+        if (token === '--data-dir') {
+            const value = argv[index + 1];
+            if (!value) {
+                throw new Error('Missing value for --data-dir');
+            }
+            options.dataDir = value;
+            index += 1;
+            continue;
+        }
+
+        if (token.startsWith('--agent-root=')) {
+            options.agentRoot = token.slice('--agent-root='.length);
+            continue;
+        }
+
+        if (token === '--agent-root') {
+            const value = argv[index + 1];
+            if (!value) {
+                throw new Error('Missing value for --agent-root');
+            }
+            options.agentRoot = value;
+            index += 1;
+            continue;
+        }
+
+        if (token.startsWith('-')) {
+            throw new Error(`Unknown option: ${token}`);
+        }
+
+        positionals.push(token);
     }
 
-    return { flags, positionals };
+    return {
+        ...options,
+        message: positionals.join(' ').trim(),
+    };
+}
+
+function parseMcpPayload(rawInput) {
+    const trimmed = String(rawInput ?? '').trim();
+    if (!trimmed) {
+        return null;
+    }
+
+    try {
+        const envelope = JSON.parse(trimmed);
+        if (!envelope || typeof envelope !== 'object') {
+            return null;
+        }
+
+        const input = envelope.input && typeof envelope.input === 'object'
+            ? envelope.input
+            : envelope;
+
+        const messageCandidates = [
+            input.message,
+            input.prompt,
+            input.promptText,
+            input.text,
+            input.query,
+        ];
+
+        const message = messageCandidates
+            .find((value) => typeof value === 'string' && value.trim())
+            ?.trim() || '';
+
+        return {
+            isEnvelope: Boolean(envelope.input),
+            message,
+            sessionId: typeof input.sessionId === 'string' ? input.sessionId.trim() : '',
+            json: input.json === true,
+            dataDir: typeof input.dataDir === 'string' ? input.dataDir.trim() : '',
+            agentRoot: typeof input.agentRoot === 'string' ? input.agentRoot.trim() : '',
+        };
+    } catch {
+        return null;
+    }
+}
+
+async function readStdin() {
+    if (process.stdin.isTTY) {
+        return '';
+    }
+
+    try {
+        return await fs.readFile(0, 'utf8');
+    } catch {
+        return '';
+    }
+}
+
+async function runTurn(agent, { sessionId, message, jsonOutput }) {
+    const result = await agent.handleMessage({ sessionId, message });
+    if (jsonOutput) {
+        process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+        return;
+    }
+    process.stdout.write(`${result.response}\n`);
+}
+
+async function runInteractive(agent, state) {
+    if (!state.json) {
+        process.stdout.write(`Session ID: ${state.sessionId}\n`);
+        process.stdout.write('Type exit to leave\n');
+    }
+
+    if (state.message) {
+        await runTurn(agent, {
+            sessionId: state.sessionId,
+            message: state.message,
+            jsonOutput: state.json,
+        });
+    }
+
+    const rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout,
+        prompt: 'you> ',
+    });
+
+    rl.on('SIGINT', () => {
+        process.stdout.write('\n');
+        rl.close();
+        process.exit(130);
+    });
+
+    rl.prompt();
+    for await (const line of rl) {
+        const text = line.trim();
+        if (!text) {
+            rl.prompt();
+            continue;
+        }
+
+        if (text === 'exit' || text === 'quit' || text === ':q') {
+            rl.close();
+            break;
+        }
+
+        await runTurn(agent, {
+            sessionId: state.sessionId,
+            message: text,
+            jsonOutput: state.json,
+        });
+        rl.prompt();
+    }
 }
 
 async function main() {
-    const { flags, positionals } = parseArguments(process.argv.slice(2));
-    const sessionId = flags['session-id'] || positionals[0];
-    const message = flags.message || positionals[1];
-
-    if (!sessionId || !message) {
-        throw new Error('Usage: node webCli/src/index.mjs --session-id <id> --message <text> [--data-dir <dir>] [--agent-root <dir>] [--json]');
-    }
-
-    const agent = await createWebCliAgent({
-        agentRoot: flags['agent-root'],
-        dataDir: flags['data-dir'],
-    });
-
-    const result = await agent.handleMessage({ sessionId, message });
-    if (flags.json) {
-        console.log(JSON.stringify(result, null, 2));
+    const cli = parseArguments(process.argv.slice(2));
+    if (cli.help) {
+        printUsage();
         return;
     }
 
-    console.log(result.response);
+    const stdinRaw = await readStdin();
+    const mcpPayload = parseMcpPayload(stdinRaw);
+    const usedMcpEnvelope = Boolean(mcpPayload?.isEnvelope);
+
+    const effective = {
+        mode: cli.mode,
+        sessionId: cli.sessionId,
+        json: cli.json,
+        dataDir: cli.dataDir,
+        agentRoot: cli.agentRoot,
+        message: cli.message,
+    };
+
+    if (mcpPayload) {
+        if (!effective.message && mcpPayload.message) {
+            effective.message = mcpPayload.message;
+        }
+        if (!effective.sessionId && mcpPayload.sessionId) {
+            effective.sessionId = mcpPayload.sessionId;
+        }
+        if (!effective.dataDir && mcpPayload.dataDir) {
+            effective.dataDir = mcpPayload.dataDir;
+        }
+        if (!effective.agentRoot && mcpPayload.agentRoot) {
+            effective.agentRoot = mcpPayload.agentRoot;
+        }
+        if (!cli.json && mcpPayload.json) {
+            effective.json = true;
+        }
+        if (usedMcpEnvelope && cli.mode !== 'mcp') {
+            effective.mode = 'mcp';
+        }
+    }
+
+    if (effective.mode === 'mcp' && !effective.message && stdinRaw && !usedMcpEnvelope) {
+        effective.message = stdinRaw.trim();
+    }
+
+    if (!effective.sessionId) {
+        effective.sessionId = generateSessionId();
+    }
+
+    if (effective.mode === 'mcp' && !effective.message) {
+        throw new Error('MCP mode requires a message.');
+    }
+
+    const agent = await createWebCliAgent({
+        agentRoot: effective.agentRoot || undefined,
+        dataDir: effective.dataDir || undefined,
+    });
+
+    if (effective.mode === 'mcp') {
+        await runTurn(agent, {
+            sessionId: effective.sessionId,
+            message: effective.message,
+            jsonOutput: effective.json,
+        });
+        return;
+    }
+
+    await runInteractive(agent, effective);
 }
 
 const currentFilePath = fileURLToPath(import.meta.url);
 if (process.argv[1] && path.resolve(process.argv[1]) === currentFilePath) {
     main().catch((error) => {
-        console.error(error.message);
+        process.stderr.write(`${error.message}\n`);
         process.exitCode = 1;
     });
 }
