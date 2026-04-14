@@ -8,5 +8,6 @@
                 "SOUL_GATEWAY_API_KEY"
             ]
         }
-    }
+    },
+    "cli": "node /code/src/index.mjs"
 }
