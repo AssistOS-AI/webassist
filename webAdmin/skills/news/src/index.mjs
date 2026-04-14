@@ -4,20 +4,25 @@ import {
     getLeadTimestamp,
     listLeadRecords,
     toIsoTimestamp,
-} from '../../shared/dataStore.mjs';
+} from '../../../../shared/dataStore.mjs';
 
-export const definition = {
-    name: "news",
-    description: "Lists the most recent leads added to the system.",
-    input_schema: {
-        type: "object",
-        properties: {
-            limit: { type: "number", description: "Max number of leads to return", default: 5 }
-        }
+function parseInput(promptText) {
+    let parsed;
+    try {
+        parsed = JSON.parse(String(promptText ?? '{}'));
+    } catch {
+        throw new Error('news expects promptText to be a valid JSON object.');
     }
-};
 
-export async function handler({ limit = 5 }, dataDir = './data') {
+    if (!parsed || typeof parsed !== 'object') {
+        throw new Error('news input must be an object.');
+    }
+    return parsed;
+}
+
+export async function action({ promptText, dataDir = './data' }) {
+    const { limit = 5 } = parseInput(promptText);
+
     const leadsDir = path.join(dataDir, 'leads');
     const normalizedLimit = Number.isInteger(limit) && limit > 0 ? limit : 5;
     const leadRecords = await listLeadRecords(leadsDir);

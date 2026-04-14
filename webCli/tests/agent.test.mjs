@@ -2,58 +2,84 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { LLMAgent } from 'achillesAgentLib';
 
-import { createWebCliAgent, promptKinds } from '../src/WebCliAgent.mjs';
+import { createWebCliAgent } from '../src/index.mjs';
 import { createWebCliSandbox } from './helpers.mjs';
 
-function createFakeWebCliLLM(promptKinds) {
-    return {
-        calls: [],
-        async executePrompt(promptText) {
-            this.calls.push(promptText);
+class FakeWebCliLLM extends LLMAgent {
+    constructor() {
+        super({
+            name: 'FakeWebCliLLM',
+            invokerStrategy: async () => '',
+        });
+        this.calls = [];
+    }
 
-            if (promptText.includes(promptKinds.decision)) {
-                return {
-                    response: 'Va pot ajuta cu integrarea API-ului si putem merge spre o discutie tehnica.',
-                    profiles: ['Developer.md'],
-                    profileDetails: ['Evaluating an API integration', 'Provided email address'],
-                    lead: {
-                        shouldCreate: true,
-                        profile: 'Developer',
-                        summary: 'High-intent developer asking for an API integration discussion.',
-                        contactInfo: {
-                            email: 'alice@example.com',
-                            name: 'Alice Example',
-                        },
+    async complete({ prompt, context }) {
+        this.calls.push({ type: 'complete', prompt, context });
+
+        if (context?.intent !== 'agentic-session-planner') {
+            throw new Error(`Unexpected complete intent: ${context?.intent}`);
+        }
+
+        const sessionId = context?.userPrompt?.match(/"sessionId"\s*:\s*"([^"]+)"/)?.[1] || 'visitor-42';
+
+        if (!prompt.includes('TOOL[create-lead]')) {
+            return {
+                tool: 'create-lead',
+                toolPrompt: JSON.stringify({
+                    sessionId,
+                    contactInfo: {
+                        email: 'alice@example.com',
+                        name: 'Alice Example',
                     },
-                    meeting: {
-                        shouldOffer: true,
-                    },
-                };
-            }
+                    profile: 'Developer',
+                    summary: 'High-intent developer asking for an API integration discussion.',
+                }),
+                reason: 'Create qualified lead.',
+            };
+        }
 
-            if (promptText.includes(promptKinds.finalResponse)) {
-                assert.match(promptText, /Calendar link: https:\/\/cal\.example\.com\/webassist-demo/);
-                return 'Sigur — va putem ajuta cu integrarea API-ului. Mai jos gasiti linkul de programare.';
-            }
+        if (!prompt.includes('TOOL[book-meeting]')) {
+            return {
+                tool: 'book-meeting',
+                toolPrompt: JSON.stringify({ sessionId }),
+                reason: 'Retrieve meeting details.',
+            };
+        }
 
-            if (promptText.includes(promptKinds.historyTranslation)) {
-                return {
-                    userMessageEnglish: 'Hello, I want to integrate your API. I am Alice, alice@example.com. Can we schedule a discussion?',
-                    agentResponseEnglish: 'Sure — we can help with API integration. Below you can find the scheduling link.',
-                };
-            }
-
-            throw new Error(`Unexpected prompt: ${promptText}`);
-        },
-    };
+        return {
+            tool: 'final_answer',
+            toolPrompt: JSON.stringify({
+                success: true,
+                sessionId,
+                response: 'Sigur — va putem ajuta cu integrarea API-ului. Mai jos gasiti linkul de programare.',
+                userMessageEnglish: 'Hello, I want to integrate your API. I am Alice, alice@example.com. Can we schedule a discussion?',
+                agentResponseEnglish: 'Sure — we can help with API integration. Below you can find the scheduling link.',
+                profiles: ['Developer.md'],
+                profileDetails: ['Evaluating an API integration', 'Provided email address'],
+                lead: {
+                    shouldCreate: true,
+                    success: true,
+                    created: true,
+                    leadId: `${sessionId}-lead.md`,
+                },
+                meeting: {
+                    shouldOffer: true,
+                    configData: 'Calendar link: https://cal.example.com/webassist-demo',
+                },
+            }),
+            reason: 'Return final runtime payload.',
+        };
+    }
 }
 
 test('webCli agent loads AchillesAgentLib and executes a full visitor turn', async (t) => {
     const sandbox = await createWebCliSandbox();
     t.after(async () => sandbox.cleanup());
 
-    const llmAgent = createFakeWebCliLLM(promptKinds);
+    const llmAgent = new FakeWebCliLLM();
     const agent = await createWebCliAgent({
         agentRoot: sandbox.agentRoot,
         dataDir: sandbox.dataDir,
@@ -72,7 +98,7 @@ test('webCli agent loads AchillesAgentLib and executes a full visitor turn', asy
     assert.equal(result.lead.shouldCreate, true);
     assert.equal(result.lead.leadId, 'visitor-42-lead.md');
     assert.equal(result.meeting.shouldOffer, true);
-    assert.equal(llmAgent.calls.length, 3);
+    assert.ok(llmAgent.calls.length >= 3);
 
     const leadContent = await fs.readFile(
         path.join(sandbox.dataDir, 'leads', 'visitor-42-lead.md'),

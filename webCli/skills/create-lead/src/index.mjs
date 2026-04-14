@@ -5,22 +5,21 @@ import {
     readLeadFile,
     toIsoTimestamp,
     writeLeadFile,
-} from '../../shared/dataStore.mjs';
+} from '../../../../shared/dataStore.mjs';
 
-export const definition = {
-    name: "createLead",
-    description: "Creates a new lead file with contact info and profiling details.",
-    input_schema: {
-        type: "object",
-        properties: {
-            sessionId: { type: "string" },
-            contactInfo: { type: "object", description: "Key-value pairs of contact data" },
-            profile: { type: "string", description: "The single most relevant profile name" },
-            summary: { type: "string", description: "A short summary explaining why this lead is valuable" }
-        },
-        required: ["sessionId", "contactInfo", "profile", "summary"]
+function parseInput(promptText) {
+    let parsed;
+    try {
+        parsed = JSON.parse(String(promptText ?? '{}'));
+    } catch {
+        throw new Error('createLead expects promptText to be a valid JSON object.');
     }
-};
+
+    if (!parsed || typeof parsed !== 'object') {
+        throw new Error('createLead input must be an object.');
+    }
+    return parsed;
+}
 
 function normalizeContactInfo(contactInfo) {
     const entries = Object.entries(contactInfo ?? {})
@@ -34,7 +33,14 @@ function normalizeContactInfo(contactInfo) {
     return Object.fromEntries(entries);
 }
 
-export async function handler({ sessionId, contactInfo, profile, summary }, dataDir = './data') {
+export async function action({ promptText, dataDir = './data' }) {
+    const {
+        sessionId,
+        contactInfo,
+        profile,
+        summary,
+    } = parseInput(promptText);
+
     if (!sessionId || !profile || !summary) {
         throw new Error('createLead requires sessionId, profile, and summary.');
     }

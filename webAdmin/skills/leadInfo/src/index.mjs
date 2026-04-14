@@ -5,21 +5,25 @@ import {
     normalizeLeadId,
     readLeadFile,
     readSessionFile,
-} from '../../shared/dataStore.mjs';
+} from '../../../../shared/dataStore.mjs';
 
-export const definition = {
-    name: "leadInfo",
-    description: "Retrieves the full profile, contact info, status, and related session history for a specific lead.",
-    input_schema: {
-        type: "object",
-        properties: {
-            leadId: { type: "string", description: "The filename of the lead" }
-        },
-        required: ["leadId"]
+function parseInput(promptText) {
+    let parsed;
+    try {
+        parsed = JSON.parse(String(promptText ?? '{}'));
+    } catch {
+        throw new Error('leadInfo expects promptText to be a valid JSON object.');
     }
-};
 
-export async function handler({ leadId }, dataDir = './data') {
+    if (!parsed || typeof parsed !== 'object') {
+        throw new Error('leadInfo input must be an object.');
+    }
+    return parsed;
+}
+
+export async function action({ promptText, dataDir = './data' }) {
+    const { leadId } = parseInput(promptText);
+
     if (!leadId) {
         return { success: false, error: 'leadId is required.' };
     }

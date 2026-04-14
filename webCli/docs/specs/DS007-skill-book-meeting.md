@@ -1,13 +1,13 @@
-# DS007 - Skill: bookMeeting
+# DS007 - Skill: book-meeting
 
 ## Goal
 To facilitate the transition from an automated chat session to a real human interaction by offering a meeting link or direct contact details.
 
 ## Mechanism
-This is an Anthropic-compatible tool called by the LLM when a visitor is deemed highly qualified and is actively requesting to speak with someone or schedule a call.
+This skill is implemented as a **cskill** and called by `visitor-flow` for highly qualified visitors requesting human contact.
 
 ## Tool Definition
-- **Name**: `bookMeeting`
+- **Name**: `book-meeting`
 - **Description**: Retrieves the site owner's calendar link or contact details to offer a direct meeting to a highly qualified lead.
 - **Inputs**:
   - `sessionId` (string): The ID of the current session.

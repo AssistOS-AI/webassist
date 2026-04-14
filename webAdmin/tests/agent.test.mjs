@@ -3,12 +3,18 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
-import { createWebAdminAgent, promptKinds } from '../src/WebAdminAgent.mjs';
 import { createWebAdminSandbox } from './helpers.mjs';
 
-function createFakeWebAdminLLM(promptKinds) {
-    return {
-        calls: [],
+function createFakeWebAdminLLM(promptKinds, LLMAgent) {
+    return new class FakeWebAdminLLM extends LLMAgent {
+        constructor() {
+            super({
+                name: 'FakeWebAdminLLM',
+                invokerStrategy: async () => '',
+            });
+            this.calls = [];
+        }
+
         async executePrompt(promptText) {
             this.calls.push(promptText);
 
@@ -39,15 +45,29 @@ function createFakeWebAdminLLM(promptKinds) {
             }
 
             throw new Error(`Unexpected prompt: ${promptText}`);
-        },
-    };
+        }
+    }();
 }
 
 test('webAdmin agent loads achillesAgentLib and executes owner requests', async (t) => {
+    let createWebAdminAgent;
+    let LLMAgent;
+    let promptKinds;
+    try {
+        ({ createWebAdminAgent, promptKinds } = await import('../src/WebAdminAgent.mjs'));
+        ({ LLMAgent } = await import('achillesAgentLib'));
+    } catch (error) {
+        if (error?.code === 'ERR_MODULE_NOT_FOUND' && String(error.message).includes('achillesAgentLib')) {
+            t.skip('achillesAgentLib is not installed in webAdmin/node_modules.');
+            return;
+        }
+        throw error;
+    }
+
     const sandbox = await createWebAdminSandbox();
     t.after(async () => sandbox.cleanup());
 
-    const llmAgent = createFakeWebAdminLLM(promptKinds);
+    const llmAgent = createFakeWebAdminLLM(promptKinds, LLMAgent);
     const agent = await createWebAdminAgent({
         agentRoot: sandbox.agentRoot,
         dataDir: sandbox.dataDir,

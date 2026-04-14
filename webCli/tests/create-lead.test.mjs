@@ -4,29 +4,35 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 
 import { createWebCliSandbox } from './helpers.mjs';
-import { handler } from '../skills/createLead.mjs';
+import { action } from '../skills/create-lead/src/index.mjs';
 
-test('createLead writes a deterministic lead file and updates it in place', async (t) => {
+test('create-lead writes a deterministic lead file and updates it in place', async (t) => {
     const sandbox = await createWebCliSandbox();
     t.after(async () => sandbox.cleanup());
 
-    const firstResult = await handler({
-        sessionId: 'session-xyz',
-        contactInfo: { email: 'test@example.com', name: 'John Doe' },
-        profile: 'Developer',
-        summary: 'Wants to integrate an API.',
-    }, sandbox.dataDir);
+    const firstResult = await action({
+        promptText: JSON.stringify({
+            sessionId: 'session-xyz',
+            contactInfo: { email: 'test@example.com', name: 'John Doe' },
+            profile: 'Developer',
+            summary: 'Wants to integrate an API.',
+        }),
+        dataDir: sandbox.dataDir,
+    });
 
     assert.equal(firstResult.success, true);
     assert.equal(firstResult.created, true);
     assert.equal(firstResult.leadId, 'session-xyz-lead.md');
 
-    const secondResult = await handler({
-        sessionId: 'session-xyz',
-        contactInfo: { email: 'test@example.com', name: 'John Doe' },
-        profile: 'Developer',
-        summary: 'Ready to scope an implementation call.',
-    }, sandbox.dataDir);
+    const secondResult = await action({
+        promptText: JSON.stringify({
+            sessionId: 'session-xyz',
+            contactInfo: { email: 'test@example.com', name: 'John Doe' },
+            profile: 'Developer',
+            summary: 'Ready to scope an implementation call.',
+        }),
+        dataDir: sandbox.dataDir,
+    });
 
     assert.equal(secondResult.success, true);
     assert.equal(secondResult.created, false);

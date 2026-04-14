@@ -3,23 +3,7 @@ import path from 'node:path';
 import {
     readSessionFile,
     writeSessionFile,
-} from '../../shared/dataStore.mjs';
-
-export const definition = {
-    name: "updateSession",
-    description: "Updates the session file with the latest user input, agent response, and current profiling assumptions.",
-    input_schema: {
-        type: "object",
-        properties: {
-            sessionId: { type: "string" },
-            userMessage: { type: "string" },
-            agentResponse: { type: "string" },
-            profiles: { type: "array", items: { type: "string" } },
-            profileDetails: { type: "array", items: { type: "string" } }
-        },
-        required: ["sessionId", "userMessage", "agentResponse", "profiles", "profileDetails"]
-    }
-};
+} from '../../../shared/dataStore.mjs';
 
 function uniqueStrings(values) {
     const seen = new Set();
@@ -37,9 +21,16 @@ function uniqueStrings(values) {
     return result;
 }
 
-export async function handler({ sessionId, userMessage, agentResponse, profiles, profileDetails }, dataDir = './data') {
+export async function updateSession({
+    sessionId,
+    userMessage,
+    agentResponse,
+    profiles,
+    profileDetails,
+    dataDir,
+}) {
     if (!sessionId || !userMessage || !agentResponse) {
-        throw new Error('updateSession requires sessionId, userMessage, and agentResponse.');
+        throw new Error('update-session requires sessionId, userMessage, and agentResponse.');
     }
 
     const sessionPath = path.join(dataDir, 'sessions', `${sessionId}.md`);

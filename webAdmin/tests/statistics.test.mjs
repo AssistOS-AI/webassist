@@ -4,7 +4,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 
 import { createWebAdminSandbox } from './helpers.mjs';
-import { handler } from '../skills/statistics.mjs';
+import { action } from '../skills/statistics/src/index.mjs';
 
 test('statistics filters sessions and leads by the requested interval', async (t) => {
     const sandbox = await createWebAdminSandbox();
@@ -23,7 +23,11 @@ test('statistics filters sessions and leads by the requested interval', async (t
         oldSessionDate
     );
 
-    const result = await handler({ interval: 'month' }, sandbox.dataDir, referenceDate);
+    const result = await action({
+        promptText: JSON.stringify({ interval: 'month' }),
+        dataDir: sandbox.dataDir,
+        referenceDate,
+    });
     assert.equal(result.success, true);
     assert.equal(result.stats.totalSessions, 1);
     assert.equal(result.stats.totalLeads, 1);

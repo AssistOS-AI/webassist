@@ -4,29 +4,31 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 
 import { createWebCliSandbox } from './helpers.mjs';
-import { handler } from '../skills/updateSession.mjs';
+import { updateSession } from '../src/runtime/update-session.mjs';
 
-test('updateSession writes and appends the structured session file', async (t) => {
+test('update-session.runtime writes and appends the structured session file', async (t) => {
     const sandbox = await createWebCliSandbox();
     t.after(async () => sandbox.cleanup());
 
-    const firstResult = await handler({
+    const firstResult = await updateSession({
         sessionId: 'test-session-1',
         userMessage: 'Hello',
         agentResponse: 'Hi there!',
         profiles: ['Developer.md'],
         profileDetails: ['Understands the API basics'],
-    }, sandbox.dataDir);
+        dataDir: sandbox.dataDir,
+    });
 
     assert.equal(firstResult.success, true);
 
-    const secondResult = await handler({
+    const secondResult = await updateSession({
         sessionId: 'test-session-1',
         userMessage: 'Need API help\nASAP',
         agentResponse: 'Happy to help.\nCan you share your timeline?',
         profiles: ['Developer.md', 'Developer.md', 'EnterpriseClient.md'],
         profileDetails: ['Understands the API basics', 'Urgent integration timeline'],
-    }, sandbox.dataDir);
+        dataDir: sandbox.dataDir,
+    });
 
     assert.equal(secondResult.success, true);
 

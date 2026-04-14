@@ -4,13 +4,16 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 
 import { createWebCliSandbox } from './helpers.mjs';
-import { handler } from '../skills/bookMeeting.mjs';
+import { action } from '../skills/book-meeting/src/index.mjs';
 
-test('bookMeeting returns the owner configuration and errors on missing config', async (t) => {
+test('book-meeting returns the owner configuration and errors on missing config', async (t) => {
     const sandbox = await createWebCliSandbox();
     t.after(async () => sandbox.cleanup());
 
-    const successResult = await handler({ sessionId: 'session1' }, sandbox.dataDir);
+    const successResult = await action({
+        promptText: JSON.stringify({ sessionId: 'session1' }),
+        dataDir: sandbox.dataDir,
+    });
     assert.match(successResult, /Calendar link: https:\/\/cal\.example\.com\/webassist-demo/);
 
     const configDir = path.join(sandbox.dataDir, 'config');
@@ -18,7 +21,10 @@ test('bookMeeting returns the owner configuration and errors on missing config',
     await fs.mkdir(configDir, { recursive: true });
 
     await assert.rejects(
-        () => handler({ sessionId: 'session1' }, sandbox.dataDir),
+        () => action({
+            promptText: JSON.stringify({ sessionId: 'session1' }),
+            dataDir: sandbox.dataDir,
+        }),
         /No configuration found/
     );
 });

@@ -4,7 +4,7 @@
 To display comprehensive profiling, contact information, and interaction history for a selected lead to the admin.
 
 ## Mechanism
-An Anthropic-compatible tool used by the webAdmin agent when the owner requests more details about a specific lead.
+A **cskill** executed through `RecursiveSkilledAgent` when the owner requests details for a specific lead.
 
 ## Tool Definition
 - **Name**: `leadInfo`

@@ -4,10 +4,6 @@ import { fileURLToPath } from 'node:url';
 import { RecursiveSkilledAgent } from "achillesAgentLib";
 import { readMarkdownDirectory, resolveDataDir } from '../../shared/dataStore.mjs';
 import { executeJsonPrompt, executeTextPrompt } from '../../shared/llmAdapter.mjs';
-import { handler as leadInfoHandler, definition as leadInfoDefinition } from '../skills/leadInfo.mjs';
-import { handler as newsHandler, definition as newsDefinition } from '../skills/news.mjs';
-import { handler as statisticsHandler, definition as statisticsDefinition } from '../skills/statistics.mjs';
-import { handler as updateLeadHandler, definition as updateLeadDefinition } from '../skills/updateLead.mjs';
 
 const WEBADMIN_CLASSIFY_PROMPT = '[WEBADMIN_CLASSIFY_PROMPT]';
 const WEBADMIN_FINAL_RESPONSE_PROMPT = '[WEBADMIN_FINAL_RESPONSE_PROMPT]';
@@ -19,11 +15,20 @@ function getDefaultAgentRoot() {
 }
 
 function buildBaseAgentOptions({ agentRoot, llmAgent, logger, sessionConfig, recursiveAgentOptions }) {
+    const explicitSkillRoot = path.join(agentRoot, 'skills');
+    const requestedSkillRoots = Array.isArray(recursiveAgentOptions?.additionalSkillRoots)
+        ? recursiveAgentOptions.additionalSkillRoots
+        : [];
+    const additionalSkillRoots = [explicitSkillRoot, ...requestedSkillRoots]
+        .filter((value, index, all) => value && all.indexOf(value) === index);
+
     const baseOptions = {
+        llmAgent,
         logger,
         startDir: agentRoot,
         searchUpwards: false,
         sessionConfig,
+        additionalSkillRoots,
         ...(recursiveAgentOptions ?? {}),
     };
 
@@ -116,22 +121,30 @@ export async function createWebAdminAgent({
                 recursiveAgentOptions,
             }));
 
-            if (llmAgent) {
-                this.llmAgent = llmAgent;
-            }
-
             this.agentRoot = resolvedAgentRoot;
             this.dataDir = resolveDataDir(resolvedAgentRoot, dataDir);
-            this.skills = {
-                updateLead: { definition: updateLeadDefinition, handler: updateLeadHandler },
-                leadInfo: { definition: leadInfoDefinition, handler: leadInfoHandler },
-                statistics: { definition: statisticsDefinition, handler: statisticsHandler },
-                news: { definition: newsDefinition, handler: newsHandler },
-            };
             this.achilles = {
                 libraryName: 'achillesAgentLib',
                 source: 'node_modules',
             };
+        }
+
+        async executeCskill(skillName, input, { mode, sessionMemory, referenceDate } = {}) {
+            const execution = await this.executeWithReviewMode(
+                JSON.stringify(input),
+                {
+                    skillName,
+                    model: mode,
+                    context: {
+                        sessionMemory,
+                        dataDir: this.dataDir,
+                        referenceDate,
+                    },
+                },
+                'none'
+            );
+
+            return execution.result;
         }
 
         async handleMessage({ message, mode = 'fast', referenceDate = new Date() }) {
@@ -154,25 +167,35 @@ export async function createWebAdminAgent({
             let actionResult;
             switch (classification.action) {
             case 'news':
-                actionResult = await newsHandler({
-                    limit: classification.arguments.limit ?? 5,
-                }, this.dataDir);
+                actionResult = await this.executeCskill(
+                    'news',
+                    { limit: classification.arguments.limit ?? 5 },
+                    { mode, sessionMemory, referenceDate }
+                );
                 break;
             case 'statistics':
-                actionResult = await statisticsHandler({
-                    interval: classification.arguments.interval ?? 'month',
-                }, this.dataDir, referenceDate);
+                actionResult = await this.executeCskill(
+                    'statistics',
+                    { interval: classification.arguments.interval ?? 'month' },
+                    { mode, sessionMemory, referenceDate }
+                );
                 break;
             case 'leadInfo':
-                actionResult = await leadInfoHandler({
-                    leadId: classification.arguments.leadId,
-                }, this.dataDir);
+                actionResult = await this.executeCskill(
+                    'leadInfo',
+                    { leadId: classification.arguments.leadId },
+                    { mode, sessionMemory, referenceDate }
+                );
                 break;
             case 'updateLead':
-                actionResult = await updateLeadHandler({
-                    leadId: classification.arguments.leadId,
-                    newStatus: classification.arguments.newStatus,
-                }, this.dataDir);
+                actionResult = await this.executeCskill(
+                    'updateLead',
+                    {
+                        leadId: classification.arguments.leadId,
+                        newStatus: classification.arguments.newStatus,
+                    },
+                    { mode, sessionMemory, referenceDate }
+                );
                 break;
             default:
                 throw new Error(`Unsupported action: ${classification.action}`);

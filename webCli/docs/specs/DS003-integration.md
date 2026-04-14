@@ -34,7 +34,7 @@ The **webCli** agent is implemented as a Node.js CLI tool with a single `session
 - `--data-dir <dir>` / `--data-dir=<dir>`: Override the runtime data directory used for `config/`, `info/`, `profilesInfo/`, `leads/`, and `sessions/`.
 - `--agent-root <dir>` / `--agent-root=<dir>`: Override the agent root used by runtime initialization.
   - This changes where default `data/` is resolved when `--data-dir` is not provided.
-  - This changes the runtime root used for agent initialization and default skill discovery scope.
+  - This changes the runtime root used for agent initialization and runtime file paths.
 - `-h` / `--help`: Print CLI usage and exit.
 - `--`: Stop option parsing and treat all remaining arguments as positional message text.
 
@@ -68,10 +68,26 @@ MCP input note:
   - Do not use filesystem scanning loaders for webCli Achilles resolution.
 
 ## Base Class: RecursiveSkilledAgent
-- **Functionality**: The agent extends or uses `RecursiveSkilledAgent` to manage the conversation loop and skill execution.
+- **Functionality**: The runtime uses a single `RecursiveSkilledAgent` instance (composition) to manage discovery and execution.
+
+## cskill Discovery and Execution
+- webCli skills under `webCli/skills/` are implemented as Achilles **cskills**.
+- webCli includes one Achilles **oskill** (`visitor-flow`) that orchestrates the turn.
+- At startup, `RecursiveSkilledAgent` is initialized with `startDir = webCli/` and discovers cskills from `webCli/skills/`.
+- Skill discovery for webCli runtime must use `searchUpwards: false`.
+- During runtime, webCli calls `RecursiveSkilledAgent.executePrompt(...)` without explicit skill name.
+- `RecursiveSkilledAgent` selects `visitor-flow`, and that orchestrator invokes cskills as needed.
+- `visitor-flow` encapsulates former decision/final-response/history-translation prompt rules as orchestrator instructions.
+
+## Runtime Pre/Post Modules
+- Before orchestration, webCli runs runtime module `load-context` from `webCli/src/runtime/load-context.mjs`.
+- The loaded context is embedded in the orchestration prompt and forwarded in execution context.
+- After orchestration returns, webCli runs runtime module `update-session` from `webCli/src/runtime/update-session.mjs`.
+- Session persistence is therefore explicit runtime behavior, not a cskill invocation.
 
 ## CLI Delegation Flow
 - The Node.js launcher `webCli/src/index.mjs` initializes `WebCliAgent` and executes conversation turns.
+- `WebCliAgent` initializes one `RecursiveSkilledAgent` instance and delegates each turn through `executePrompt(...)`.
 - In interactive mode, the launcher calls the runtime repeatedly (one call per turn) while preserving the same `sessionId`.
 - In MCP mode, the launcher performs a single runtime call and exits.
 

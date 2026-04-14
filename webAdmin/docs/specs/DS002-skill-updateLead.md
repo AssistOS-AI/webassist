@@ -4,7 +4,7 @@
 To manage the state and lifecycle of a lead inside the `webAdmin` application.
 
 ## Mechanism
-An Anthropic-compatible tool used by the webAdmin agent when the owner requests to change the status of a specific lead.
+A **cskill** executed through `RecursiveSkilledAgent` when the owner requests status updates for a lead.
 
 ## Tool Definition
 - **Name**: `updateLead`

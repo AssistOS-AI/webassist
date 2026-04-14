@@ -124,8 +124,12 @@ test('mcp mode supports required CLI variants', async (t) => {
     await t.test('runs -mcp with --agent-root override', async (sub) => {
         const customRuntimeRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'webcli-agent-root-'));
         const customAgentRoot = path.join(customRuntimeRoot, 'agent-root');
+        const customSkillsDir = path.join(customAgentRoot, 'skills');
+        const customSharedDir = path.join(customRuntimeRoot, 'shared');
 
         await fs.mkdir(customAgentRoot, { recursive: true });
+        await fs.cp(path.join(WEBCLI_ROOT, 'skills'), customSkillsDir, { recursive: true });
+        await fs.cp(path.join(REPO_ROOT, 'shared'), customSharedDir, { recursive: true });
 
         sub.after(async () => {
             await fs.rm(customRuntimeRoot, { recursive: true, force: true });

@@ -5,24 +5,27 @@ import {
     readLeadFile,
     toIsoTimestamp,
     writeLeadFile,
-} from '../../shared/dataStore.mjs';
-
-export const definition = {
-    name: "updateLead",
-    description: "Updates the status of an existing lead.",
-    input_schema: {
-        type: "object",
-        properties: {
-            leadId: { type: "string", description: "Filename of the lead (e.g. session1-lead-123.md)" },
-            newStatus: { type: "string", enum: ["invalid", "contacted", "converted"] }
-        },
-        required: ["leadId", "newStatus"]
-    }
-};
+} from '../../../../shared/dataStore.mjs';
 
 const ALLOWED_STATUSES = new Set(['invalid', 'contacted', 'converted']);
 
-export async function handler({ leadId, newStatus }, dataDir = './data') {
+function parseInput(promptText) {
+    let parsed;
+    try {
+        parsed = JSON.parse(String(promptText ?? '{}'));
+    } catch {
+        throw new Error('updateLead expects promptText to be a valid JSON object.');
+    }
+
+    if (!parsed || typeof parsed !== 'object') {
+        throw new Error('updateLead input must be an object.');
+    }
+    return parsed;
+}
+
+export async function action({ promptText, dataDir = './data' }) {
+    const { leadId, newStatus } = parseInput(promptText);
+
     if (!leadId) {
         return { success: false, error: 'leadId is required.' };
     }

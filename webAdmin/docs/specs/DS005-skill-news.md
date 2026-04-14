@@ -4,7 +4,7 @@
 To provide the site owner with immediate awareness of the most recent interactions that resulted in new leads.
 
 ## Mechanism
-An Anthropic-compatible tool used by the webAdmin agent when queried about "what's new", "recent leads", or similar prompts.
+A **cskill** executed through `RecursiveSkilledAgent` when queried about recent lead activity.
 
 ## Tool Definition
 - **Name**: `news`

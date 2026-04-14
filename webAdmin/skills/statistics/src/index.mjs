@@ -6,21 +6,25 @@ import {
     getLeadTimestamp,
     isTimestampWithinWindow,
     listLeadRecords,
-} from '../../shared/dataStore.mjs';
+} from '../../../../shared/dataStore.mjs';
 
-export const definition = {
-    name: "statistics",
-    description: "Returns numerical summaries of total sessions, total leads, and leads by category over a specified time interval.",
-    input_schema: {
-        type: "object",
-        properties: {
-            interval: { type: "string", enum: ["day", "week", "month", "year"], description: "The time interval to report." }
-        },
-        required: ["interval"]
+function parseInput(promptText) {
+    let parsed;
+    try {
+        parsed = JSON.parse(String(promptText ?? '{}'));
+    } catch {
+        throw new Error('statistics expects promptText to be a valid JSON object.');
     }
-};
 
-export async function handler({ interval }, dataDir = './data', referenceDate = new Date()) {
+    if (!parsed || typeof parsed !== 'object') {
+        throw new Error('statistics input must be an object.');
+    }
+    return parsed;
+}
+
+export async function action({ promptText, dataDir = './data', referenceDate = new Date() }) {
+    const { interval } = parseInput(promptText);
+
     const sessionsDir = path.join(dataDir, 'sessions');
     const leadsDir = path.join(dataDir, 'leads');
     const window = getIntervalStart(interval, referenceDate);

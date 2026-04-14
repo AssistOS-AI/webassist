@@ -13,6 +13,8 @@ The **webAdmin** agent is a backend management interface for site owners. It pro
 - **Entry Point**: `webAdmin/src/index.mjs`
 - **Agent Factory**: `webAdmin/src/WebAdminAgent.mjs`
 - **Base Class**: `RecursiveSkilledAgent` imported directly from `node_modules`.
+- **Skill Runtime**: Operational skills are implemented as cskills and executed through `RecursiveSkilledAgent`.
+- **Discovery Scope**: `RecursiveSkilledAgent` is initialized with `startDir = webAdmin/` and `searchUpwards: false`, discovering cskills only from `webAdmin/skills/`.
 
 ## AchillesAgentLib Loading Contract
 - `webAdmin` must import Achilles directly with:

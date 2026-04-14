@@ -1,13 +1,13 @@
-# DS006 - Skill: createLead
+# DS006 - Skill: create-lead
 
 ## Goal
 To save the captured contact information and profiling details into a structured file inside the `data/leads/` directory when a user is deemed a valuable prospect, and keep that file updated during the same session.
 
 ## Mechanism
-This is an Anthropic-compatible tool called when the LLM determines that a user's intent, provided contact info, and profiled traits match a specific `ProfileName.md`'s requirements.
+This skill is implemented as a **cskill** and called by `visitor-flow` when lead qualification criteria are met.
 
 ## Tool Definition
-- **Name**: `createLead`
+- **Name**: `create-lead`
 - **Description**: Creates or updates a lead file in the system. The tool parses contact details and profile traits, writing a file that represents a solid lead.
 - **Inputs**:
   - `sessionId` (string): The current session ID (used as part of the filename or reference).

@@ -6,6 +6,11 @@ Runtime dependency note:
 - `webAdmin` uses AchillesAgentLib via direct package import from `node_modules`.
 - The agent runtime extends `RecursiveSkilledAgent` imported from `achillesAgentLib`.
 
+Skill runtime note:
+- Operational webAdmin skills are implemented as **cskills** (`cskill.md` + `src/index.mjs`).
+- They are discovered and registered from `webAdmin/skills/` by `RecursiveSkilledAgent`.
+- Execution is routed through `RecursiveSkilledAgent` skill execution APIs.
+
 ## Skill: updateLead
 - **Function**: Manages the lifecycle of a lead in `leads/`.
 - **States**: Transitions a lead from `new` to `invalid`, `contacted`, or `converted`.
