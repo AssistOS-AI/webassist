@@ -9,5 +9,8 @@
             ]
         }
     },
-    "cli": "node /code/src/index.mjs"
+    "cli": "node /code/src/index.mjs",
+    "volumes": {
+        ".ploinky/repos/webassist/webassist-shared": "/webassist-shared"
+    }
 }

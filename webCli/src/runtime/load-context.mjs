@@ -4,7 +4,7 @@ import {
     combineMarkdownFiles,
     readMarkdownDirectory,
     readSessionFile,
-} from '../../../shared/dataStore.mjs';
+} from '../../../webassist-shared/dataStore.mjs';
 
 export async function loadContext({ sessionId, dataDir }) {
     if (!sessionId) {

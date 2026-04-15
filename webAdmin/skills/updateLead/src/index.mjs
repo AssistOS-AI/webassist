@@ -5,7 +5,7 @@ import {
     readLeadFile,
     toIsoTimestamp,
     writeLeadFile,
-} from '../../../../shared/dataStore.mjs';
+} from '../../../../webassist-shared/dataStore.mjs';
 
 const ALLOWED_STATUSES = new Set(['invalid', 'contacted', 'converted']);
 

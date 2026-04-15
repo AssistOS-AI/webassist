@@ -4,7 +4,7 @@ import {
     getLeadTimestamp,
     listLeadRecords,
     toIsoTimestamp,
-} from '../../../../shared/dataStore.mjs';
+} from '../../../../webassist-shared/dataStore.mjs';
 
 function parseInput(promptText) {
     let parsed;

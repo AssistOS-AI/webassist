@@ -131,7 +131,7 @@ export async function ensureDirectory(directoryPath) {
 export function resolveDataDir(agentRoot, explicitDataDir = null) {
     return explicitDataDir
         ? path.resolve(explicitDataDir)
-        : path.resolve(agentRoot, 'data');
+        : path.resolve(agentRoot, '..', 'webassist-shared', 'data');
 }
 
 export async function readMarkdownDirectory(directoryPath) {

@@ -3,7 +3,7 @@ import path from 'node:path';
 import {
     combineMarkdownFiles,
     readMarkdownDirectory,
-} from '../../../../shared/dataStore.mjs';
+} from '../../../../webassist-shared/dataStore.mjs';
 
 function parseInput(promptText) {
     let parsed;

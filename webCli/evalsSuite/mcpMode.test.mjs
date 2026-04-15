@@ -15,7 +15,10 @@ function runCli(args, { stdin = '', cwd = REPO_ROOT } = {}) {
     return new Promise((resolve) => {
         const child = spawn(process.execPath, [CLI_ENTRY, ...args], {
             cwd,
-            env: process.env,
+            env: {
+                ...process.env,
+                ACHILLES_DEBUG: 'false',
+            },
             stdio: ['pipe', 'pipe', 'pipe'],
         });
 
@@ -45,7 +48,7 @@ async function assertDirectoryExists(targetPath) {
 }
 
 test('mcp mode supports required CLI variants', async (t) => {
-    const defaultDataDir = path.join(WEBCLI_ROOT, 'data');
+    const defaultDataDir = path.join(REPO_ROOT, 'webassist-shared', 'data');
     const createdDefaultSessions = [];
 
     t.after(async () => {
@@ -125,11 +128,11 @@ test('mcp mode supports required CLI variants', async (t) => {
         const customRuntimeRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'webcli-agent-root-'));
         const customAgentRoot = path.join(customRuntimeRoot, 'agent-root');
         const customSkillsDir = path.join(customAgentRoot, 'skills');
-        const customSharedDir = path.join(customRuntimeRoot, 'shared');
+        const customSharedDir = path.join(customRuntimeRoot, 'webassist-shared');
 
         await fs.mkdir(customAgentRoot, { recursive: true });
         await fs.cp(path.join(WEBCLI_ROOT, 'skills'), customSkillsDir, { recursive: true });
-        await fs.cp(path.join(REPO_ROOT, 'shared'), customSharedDir, { recursive: true });
+        await fs.cp(path.join(REPO_ROOT, 'webassist-shared'), customSharedDir, { recursive: true });
 
         sub.after(async () => {
             await fs.rm(customRuntimeRoot, { recursive: true, force: true });
@@ -151,7 +154,7 @@ test('mcp mode supports required CLI variants', async (t) => {
         assert.equal(payload.success, true);
         assert.equal(payload.sessionId, sessionId);
 
-        const expectedDataDir = path.join(customAgentRoot, 'data');
+        const expectedDataDir = path.join(customRuntimeRoot, 'webassist-shared', 'data');
         await assertDirectoryExists(expectedDataDir);
         const sessionPath = path.join(expectedDataDir, 'sessions', `${sessionId}.md`);
         const sessionContent = await fs.readFile(sessionPath, 'utf8');

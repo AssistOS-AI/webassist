@@ -33,7 +33,7 @@ The **webCli** agent is implemented as a Node.js CLI tool with a single `session
 - `--json`: Print JSON output from runtime instead of plain text response.
 - `--data-dir <dir>` / `--data-dir=<dir>`: Override the runtime data directory used for `config/`, `info/`, `profilesInfo/`, `leads/`, and `sessions/`.
 - `--agent-root <dir>` / `--agent-root=<dir>`: Override the agent root used by runtime initialization.
-  - This changes where default `data/` is resolved when `--data-dir` is not provided.
+  - This changes where default `webassist-shared/data` is resolved when `--data-dir` is not provided.
   - This changes the runtime root used for agent initialization and runtime file paths.
 - `-h` / `--help`: Print CLI usage and exit.
 - `--`: Stop option parsing and treat all remaining arguments as positional message text.
@@ -47,7 +47,7 @@ MCP input note:
 - **Session Handling**:
   - If `--session-id` is provided, it must be reused for all turns in that process.
   - If `--session-id` is missing, `web-cli` must generate one automatically and reuse it for the whole interactive session.
-- **Persistence**: Every turn must be written to `data/sessions/{sessionId}.md` through existing skills.
+- **Persistence**: Every turn must be written to `{resolvedDataDir}/sessions/{sessionId}.md`.
 - **Exit Controls**: The interactive loop must allow exiting by typing `exit` or by pressing `Ctrl+C`.
 - **Example**: `node webCli/src/index.mjs "Hello I'm interested in your API"`
 

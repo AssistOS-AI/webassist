@@ -2,8 +2,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { RecursiveSkilledAgent } from "achillesAgentLib";
-import { readMarkdownDirectory, resolveDataDir } from '../../shared/dataStore.mjs';
-import { executeJsonPrompt, executeTextPrompt } from '../../shared/llmAdapter.mjs';
+import { readMarkdownDirectory, resolveDataDir } from '../../webassist-shared/dataStore.mjs';
+import { executeJsonPrompt, executeTextPrompt } from './llmAdapter.mjs';
 
 const WEBADMIN_CLASSIFY_PROMPT = '[WEBADMIN_CLASSIFY_PROMPT]';
 const WEBADMIN_FINAL_RESPONSE_PROMPT = '[WEBADMIN_FINAL_RESPONSE_PROMPT]';

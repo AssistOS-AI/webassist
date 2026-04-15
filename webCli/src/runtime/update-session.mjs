@@ -3,7 +3,7 @@ import path from 'node:path';
 import {
     readSessionFile,
     writeSessionFile,
-} from '../../../shared/dataStore.mjs';
+} from '../../../webassist-shared/dataStore.mjs';
 
 function uniqueStrings(values) {
     const seen = new Set();

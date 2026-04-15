@@ -2,7 +2,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { RecursiveSkilledAgent } from 'achillesAgentLib';
-import { resolveDataDir } from '../../shared/dataStore.mjs';
+import { resolveDataDir } from '../../webassist-shared/dataStore.mjs';
 import { loadContext } from './runtime/load-context.mjs';
 import { updateSession } from './runtime/update-session.mjs';
 

@@ -50,6 +50,6 @@ To define the current automated test coverage for `webCli`, including the behavi
 
 ## Fixture Strategy
 - Tests use isolated sandbox data directories and fixture markdown seed content.
-- Sandbox fixtures also copy `skills/` and repo `shared/` to support strict agent-root discovery and skill imports.
+- Sandbox fixtures also copy `skills/` and repo `webassist-shared/` to support strict agent-root discovery and skill imports.
 - AchillesAgentLib is expected to be available via `node_modules` package resolution during test execution.
 - Tests must not require external network calls or provider credentials.
