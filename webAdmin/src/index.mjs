@@ -1,64 +1,160 @@
+#!/usr/bin/env node
+
 import path from 'node:path';
+import readline from 'node:readline';
 import { fileURLToPath } from 'node:url';
 
 import { createWebAdminAgent } from './WebAdminAgent.mjs';
 
+function printUsage() {
+    process.stdout.write(`Usage:\n  webAdmin/src/index.mjs "message"\n\nOptions:\n  --json                       Print JSON output from runtime\n  --data-dir <dir>             Override data directory\n  --agent-root <dir>           Override agent root directory\n  -h, --help                   Show this help\n`);
+}
+
 function parseArguments(argv) {
-    const flags = {};
     const positionals = [];
+    const options = {
+        json: false,
+        dataDir: '',
+        agentRoot: '',
+        help: false,
+    };
 
     for (let index = 0; index < argv.length; index += 1) {
-        const argument = argv[index];
-        if (!argument.startsWith('--')) {
-            positionals.push(argument);
+        const token = argv[index];
+
+        if (token === '--') {
+            for (let cursor = index + 1; cursor < argv.length; cursor += 1) {
+                positionals.push(argv[cursor]);
+            }
+            break;
+        }
+
+        if (token === '--json') {
+            options.json = true;
             continue;
         }
 
-        const [rawKey, inlineValue] = argument.slice(2).split('=');
-        if (inlineValue !== undefined) {
-            flags[rawKey] = inlineValue;
+        if (token === '-h' || token === '--help') {
+            options.help = true;
             continue;
         }
 
-        const nextValue = argv[index + 1];
-        if (nextValue && !nextValue.startsWith('--')) {
-            flags[rawKey] = nextValue;
+        if (token.startsWith('--data-dir=')) {
+            options.dataDir = token.slice('--data-dir='.length);
+            continue;
+        }
+
+        if (token === '--data-dir') {
+            const value = argv[index + 1];
+            if (!value) {
+                throw new Error('Missing value for --data-dir');
+            }
+            options.dataDir = value;
             index += 1;
             continue;
         }
 
-        flags[rawKey] = true;
+        if (token.startsWith('--agent-root=')) {
+            options.agentRoot = token.slice('--agent-root='.length);
+            continue;
+        }
+
+        if (token === '--agent-root') {
+            const value = argv[index + 1];
+            if (!value) {
+                throw new Error('Missing value for --agent-root');
+            }
+            options.agentRoot = value;
+            index += 1;
+            continue;
+        }
+
+        if (token.startsWith('-')) {
+            throw new Error(`Unknown option: ${token}`);
+        }
+
+        positionals.push(token);
     }
 
-    return { flags, positionals };
+    return {
+        ...options,
+        message: positionals.join(' ').trim(),
+    };
+}
+
+async function runTurn(agent, { message, jsonOutput }) {
+    const result = await agent.handleMessage({ message });
+    if (jsonOutput) {
+        process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+        return;
+    }
+    process.stdout.write(`${result.response}\n`);
+}
+
+async function runInteractive(agent, state) {
+    if (!state.json) {
+        process.stdout.write('Type exit to leave\n');
+    }
+
+    if (state.message) {
+        await runTurn(agent, {
+            message: state.message,
+            jsonOutput: state.json,
+        });
+    }
+
+    const rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout,
+        prompt: 'you> ',
+    });
+
+    rl.on('SIGINT', () => {
+        process.stdout.write('\n');
+        rl.close();
+        process.exit(130);
+    });
+
+    rl.prompt();
+    for await (const line of rl) {
+        const text = line.trim();
+        if (!text) {
+            rl.prompt();
+            continue;
+        }
+
+        if (text === 'exit' || text === 'quit' || text === ':q') {
+            rl.close();
+            break;
+        }
+
+        await runTurn(agent, {
+            message: text,
+            jsonOutput: state.json,
+        });
+        rl.prompt();
+    }
 }
 
 async function main() {
-    const { flags, positionals } = parseArguments(process.argv.slice(2));
-    const message = flags.message || positionals.join(' ');
-
-    if (!message) {
-        throw new Error('Usage: node webAdmin/src/index.mjs --message <text> [--data-dir <dir>] [--agent-root <dir>] [--json]');
-    }
-
-    const agent = await createWebAdminAgent({
-        agentRoot: flags['agent-root'],
-        dataDir: flags['data-dir'],
-    });
-
-    const result = await agent.handleMessage({ message });
-    if (flags.json) {
-        console.log(JSON.stringify(result, null, 2));
+    const cli = parseArguments(process.argv.slice(2));
+    if (cli.help) {
+        printUsage();
         return;
     }
 
-    console.log(result.response);
+    const agent = await createWebAdminAgent({
+        agentRoot: cli.agentRoot || undefined,
+        dataDir: cli.dataDir || undefined,
+    });
+
+    await runInteractive(agent, cli);
 }
 
 const currentFilePath = fileURLToPath(import.meta.url);
 if (process.argv[1] && path.resolve(process.argv[1]) === currentFilePath) {
     main().catch((error) => {
-        console.error(error.message);
+        process.stderr.write(`${error.message}\n`);
         process.exitCode = 1;
     });
 }

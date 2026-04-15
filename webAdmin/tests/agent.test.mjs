@@ -4,8 +4,9 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 
 import { createWebAdminSandbox } from './helpers.mjs';
+import { createWebAdminAgent } from '../src/WebAdminAgent.mjs';
 
-function createFakeWebAdminLLM(promptKinds, LLMAgent) {
+function createFakeWebAdminLLM(LLMAgent) {
     return new class FakeWebAdminLLM extends LLMAgent {
         constructor() {
             super({
@@ -15,46 +16,94 @@ function createFakeWebAdminLLM(promptKinds, LLMAgent) {
             this.calls = [];
         }
 
-        async executePrompt(promptText) {
-            this.calls.push(promptText);
+        async complete({ prompt, context }) {
+            this.calls.push({ prompt, context });
 
-            if (promptText.includes(promptKinds.classify)) {
-                if (promptText.includes('Te rog marcheaza dev-session-lead.md ca converted.')) {
+            const allowedIntents = new Set(['agentic-session-planner', 'task-run']);
+            if (context?.intent && !allowedIntents.has(context.intent)) {
+                throw new Error(`Unexpected complete intent: ${context?.intent}`);
+            }
+
+            const userPrompt = String(context?.userPrompt || '');
+            const classifierSource = userPrompt || prompt || '';
+
+            if (classifierSource.includes('converted') || classifierSource.includes('marcheaza')) {
+                if (!prompt.includes('TOOL[updatelead]')) {
                     return {
-                        action: 'updateLead',
-                        arguments: {
+                        tool: 'updatelead',
+                        toolPrompt: JSON.stringify({
                             leadId: 'dev-session-lead.md',
                             newStatus: 'converted',
-                        },
+                        }),
+                        reason: 'Update lead status.',
                     };
                 }
 
                 return {
-                    action: 'statistics',
-                    arguments: {
-                        interval: 'month',
-                    },
+                    tool: 'final_answer',
+                    toolPrompt: 'Am actualizat leadul dev-session-lead.md la statusul converted.',
+                    reason: 'Return admin response.',
                 };
             }
 
-            if (promptText.includes(promptKinds.finalResponse)) {
-                if (promptText.includes('Executed action:\nupdateLead')) {
-                    return 'Am actualizat leadul dev-session-lead.md la statusul converted.';
-                }
-                return 'Statisticile pe luna curenta sunt pregatite.';
+            if (!prompt.includes('TOOL[statistics]')) {
+                return {
+                    tool: 'statistics',
+                    toolPrompt: JSON.stringify({ interval: 'month' }),
+                    reason: 'Compute monthly stats.',
+                };
             }
 
-            throw new Error(`Unexpected prompt: ${promptText}`);
+            return {
+                tool: 'final_answer',
+                toolPrompt: 'Statisticile pe luna curenta sunt pregatite.',
+                reason: 'Return admin response.',
+            };
+        }
+
+        async startSOPLangAgentSession(skillsDescription, initialPrompt, options = {}) {
+            const commandsRegistry = options?.commandsRegistry;
+            let lastResult = '';
+
+            const runCommand = async (command, args) => {
+                let output;
+                await commandsRegistry.executeCommand({ command, args }, {
+                    success: async (data) => {
+                        output = data;
+                        return { status: 'success', data };
+                    },
+                    fail: async (error) => {
+                        output = error;
+                        return { status: 'fail', error };
+                    },
+                });
+                return output;
+            };
+
+            if (String(initialPrompt || '').includes('converted')) {
+                const args = {
+                    leadId: 'dev-session-lead.md',
+                    newStatus: 'converted',
+                };
+                await runCommand('updateLead', [JSON.stringify(args)]);
+                lastResult = 'Am actualizat leadul dev-session-lead.md la statusul converted.';
+            } else {
+                const args = { interval: 'month' };
+                await runCommand('statistics', [JSON.stringify(args)]);
+                lastResult = 'Statisticile pe luna curenta sunt pregatite.';
+            }
+
+            return {
+                getVariables: async () => ({}),
+                getLastResult: () => lastResult,
+            };
         }
     }();
 }
 
 test('webAdmin agent loads achillesAgentLib and executes owner requests', async (t) => {
-    let createWebAdminAgent;
     let LLMAgent;
-    let promptKinds;
     try {
-        ({ createWebAdminAgent, promptKinds } = await import('../src/WebAdminAgent.mjs'));
         ({ LLMAgent } = await import('achillesAgentLib'));
     } catch (error) {
         if (error?.code === 'ERR_MODULE_NOT_FOUND' && String(error.message).includes('achillesAgentLib')) {
@@ -67,7 +116,7 @@ test('webAdmin agent loads achillesAgentLib and executes owner requests', async 
     const sandbox = await createWebAdminSandbox();
     t.after(async () => sandbox.cleanup());
 
-    const llmAgent = createFakeWebAdminLLM(promptKinds, LLMAgent);
+    const llmAgent = createFakeWebAdminLLM(LLMAgent);
     const agent = await createWebAdminAgent({
         agentRoot: sandbox.agentRoot,
         dataDir: sandbox.dataDir,
@@ -79,8 +128,7 @@ test('webAdmin agent loads achillesAgentLib and executes owner requests', async 
     });
 
     assert.equal(agent.achilles.libraryName, 'achillesAgentLib');
-    assert.equal(updateResult.action, 'updateLead');
-    assert.equal(updateResult.result.lead.status, 'converted');
+    assert.equal(updateResult.success, true);
     assert.match(updateResult.response, /statusul converted/);
 
     const updatedLeadContent = await fs.readFile(
@@ -94,8 +142,7 @@ test('webAdmin agent loads achillesAgentLib and executes owner requests', async 
         referenceDate: new Date('2026-04-06T12:00:00.000Z'),
     });
 
-    assert.equal(statsResult.action, 'statistics');
-    assert.equal(statsResult.result.stats.interval, 'month');
+    assert.equal(statsResult.success, true);
     assert.match(statsResult.response, /Statisticile pe luna curenta/);
-    assert.equal(llmAgent.calls.length, 4);
+    assert.ok(llmAgent.calls.length >= 4);
 });

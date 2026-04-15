@@ -1,4 +1,4 @@
-# DS004 - Skill: statistics
+# DS005 - Skill: statistics
 
 ## Goal
 To aggregate session and lead metrics over specified time intervals to help the owner gauge site performance.

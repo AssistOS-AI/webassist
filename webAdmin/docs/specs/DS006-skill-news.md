@@ -1,4 +1,4 @@
-# DS005 - Skill: news
+# DS006 - Skill: news
 
 ## Goal
 To provide the site owner with immediate awareness of the most recent interactions that resulted in new leads.

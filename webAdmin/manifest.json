@@ -1,0 +1,16 @@
+{
+    "lite-sandbox": true,
+    "container": "node:20-bullseye",
+    "profiles": {
+        "default": {
+            "env": [
+                "ACHILLES_DEBUG",
+                "SOUL_GATEWAY_API_KEY"
+            ]
+        }
+    },
+    "cli": "node /code/src/index.mjs",
+    "volumes": {
+        ".ploinky/repos/webassist/webassist-shared": "/webassist-shared"
+    }
+}

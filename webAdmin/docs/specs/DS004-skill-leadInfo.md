@@ -1,4 +1,4 @@
-# DS003 - Skill: leadInfo
+# DS004 - Skill: leadInfo
 
 ## Goal
 To display comprehensive profiling, contact information, and interaction history for a selected lead to the admin.
