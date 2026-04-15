@@ -10,20 +10,20 @@ Trigger keywords include: "news", "latest leads", "statistics", "stats", "lead i
 2. Choose exactly one skill and define its arguments (write all operational text in English):
    - `news`: `{ "limit": 5 }` (default to 5 when unspecified).
    - `statistics`: `{ "interval": "day" | "week" | "month" | "year" }` (default to `month` when unspecified).
-   - `leadInfo`: `{ "leadId": "session-lead.md" }`.
-   - `updateLead`: `{ "leadId": "session-lead.md", "newStatus": "invalid" | "contacted" | "converted" }`.
-   - `manageProfile`: `{ "profileName": "...", "characteristics": ["..."], "interests": ["..."], "qualifyingCriteria": ["..."] }`.
-   - `listProfiles`: `{ }` (no arguments).
+   - `lead-info`: `{ "leadId": "session-lead.md" }`.
+   - `update-lead`: `{ "leadId": "session-lead.md", "newStatus": "invalid" | "contacted" | "converted" }`.
+   - `manage-profile`: `{ "profileName": "...", "characteristics": ["..."], "interests": ["..."], "qualifyingCriteria": ["..."] }`.
+   - `list-profiles`: `{ "profileName": "...", "sections": ["Characteristics" | "Interests" | "Qualifying criteria"] }` (optional).
    Rules:
    - Use an existing leadId whenever the owner refers to a specific lead.
    - Validate `newStatus` is one of the allowed values.
 3. Execute the matching skill (skill calls and inputs must be in English):
    - `news` → call `news` with the JSON arguments.
    - `statistics` → call `statistics` with the JSON arguments.
-   - `leadInfo` → call `leadinfo` with the JSON arguments.
-   - `updateLead` → call `updatelead` with the JSON arguments.
-   - `manageProfile` → call `manage-profile` with the JSON arguments.
-   - `listProfiles` → call `list-profiles` with empty JSON arguments.
+   - `lead-info` → call `lead-info` with the JSON arguments.
+   - `update-lead` → call `update-lead` with the JSON arguments.
+   - `manage-profile` → call `manage-profile` with the JSON arguments.
+   - `list-profiles` → call `list-profiles` with JSON arguments (empty object when listing all).
 4. Draft the owner-facing response in the same language as the owner message. Use the skill result to answer concisely.
    - All operational text, tool selection reasoning, and any intermediate notes must be in English.
 5. Return **plain text only** — the final owner-facing response string (no JSON).
@@ -31,8 +31,8 @@ Trigger keywords include: "news", "latest leads", "statistics", "stats", "lead i
 ## Allowed Skills
 - news
 - statistics
-- leadInfo
-- updateLead
+- lead-info
+- update-lead
 - manage-profile
 - list-profiles
 

@@ -1,4 +1,4 @@
-# DS002 - Skill: updateLead
+# DS002 - Skill: update-lead
 
 ## Goal
 To manage the state and lifecycle of a lead inside the `webAdmin` application.
@@ -7,7 +7,7 @@ To manage the state and lifecycle of a lead inside the `webAdmin` application.
 A **cskill** executed through `RecursiveSkilledAgent` when the owner requests status updates for a lead.
 
 ## Tool Definition
-- **Name**: `updateLead`
+- **Name**: `update-lead`
 - **Description**: Updates the status of an existing lead in the system.
 - **Inputs**:
   - `leadId` (string): The identifier of the lead (typically `{sessionId}-lead.md`).

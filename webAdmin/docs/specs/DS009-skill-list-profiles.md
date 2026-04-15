@@ -1,23 +1,41 @@
 # DS009 - Skill: list-profiles
 
 ## Goal
-List the available profile templates stored in `data/profilesInfo/`.
+List available profiles, or return the full markdown/selected sections for a specific profile.
 
 ## Mechanism
 A **cskill** executed through `RecursiveSkilledAgent` when the owner requests a list of profiles.
 
 ## Tool Definition
 - **Name**: `list-profiles`
-- **Description**: Returns profile names without the `.md` extension.
-- **Inputs**: None (accepts an empty JSON object).
+- **Description**: Lists profiles or returns a profile’s markdown/sections.
+- **Inputs**:
+  - `profileName` (string, optional): If provided, returns the profile content.
+  - `sections` (array of strings, optional): When provided with `profileName`, returns only those sections.
 
 ## Output
-A JSON object containing:
+When `profileName` is **not** provided:
 - `success` (boolean)
 - `profiles` (array of strings, without `.md`)
 
+When `profileName` **is** provided:
+- `success` (boolean)
+- `profileName` (string, without `.md`)
+- `content` (string, markdown with section headings)
+- `sectionsDisplayed` (array of section titles)
+
 ## Execution Logic (Node.js)
-1. Read markdown files from `data/profilesInfo/`.
-2. Strip the `.md` extension from each filename.
-3. Sort the list alphabetically.
-4. Return the list.
+1. If `profileName` is missing:
+   - Read markdown files from `data/profilesInfo/`.
+   - Strip the `.md` extension from each filename.
+   - Sort the list alphabetically and return it.
+2. If `profileName` is provided:
+   - Locate the profile file by case-insensitive match on filename.
+   - If `sections` is missing, return the full markdown.
+   - If `sections` is provided, resolve only the standard headings:
+     - `Characteristics`
+     - `Interests`
+     - `Qualifying criteria`
+   - Unknown section labels are mapped by keywords (`character*`, `interest*`, `criteria/qualify*`).
+   - If no keyword mapping matches, return all three sections.
+   - Always include the section title in the returned content and report `sectionsDisplayed`.

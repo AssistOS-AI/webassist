@@ -14,11 +14,11 @@ function parseInput(promptText) {
     try {
         parsed = JSON.parse(String(promptText ?? '{}'));
     } catch {
-        throw new Error('updateLead expects promptText to be a valid JSON object.');
+        throw new Error('update-lead expects promptText to be a valid JSON object.');
     }
 
     if (!parsed || typeof parsed !== 'object') {
-        throw new Error('updateLead input must be an object.');
+        throw new Error('update-lead input must be an object.');
     }
     return parsed;
 }

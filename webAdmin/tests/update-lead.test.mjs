@@ -4,9 +4,9 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 
 import { createWebAdminSandbox } from './helpers.mjs';
-import { action } from '../skills/updateLead/src/index.mjs';
+import { action } from '../skills/update-lead/src/index.mjs';
 
-test('updateLead updates lead lifecycle state and rejects invalid cases', async (t) => {
+test('update-lead updates lead lifecycle state and rejects invalid cases', async (t) => {
     const sandbox = await createWebAdminSandbox();
     t.after(async () => sandbox.cleanup());
 

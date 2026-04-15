@@ -1,4 +1,4 @@
-# DS004 - Skill: leadInfo
+# DS004 - Skill: lead-info
 
 ## Goal
 To display comprehensive profiling, contact information, and interaction history for a selected lead to the admin.
@@ -7,7 +7,7 @@ To display comprehensive profiling, contact information, and interaction history
 A **cskill** executed through `RecursiveSkilledAgent` when the owner requests details for a specific lead.
 
 ## Tool Definition
-- **Name**: `leadInfo`
+- **Name**: `lead-info`
 - **Description**: Retrieves the full profile, contact info, status, and related session history for a specific lead.
 - **Inputs**:
   - `leadId` (string): The ID of the lead.

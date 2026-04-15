@@ -1,4 +1,4 @@
-# leadInfo
+# lead-info
 
 ## Summary
 Returns lead details and related session history.

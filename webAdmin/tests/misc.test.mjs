@@ -4,10 +4,10 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 
 import { createWebAdminSandbox } from './helpers.mjs';
-import { action as leadInfoAction } from '../skills/leadInfo/src/index.mjs';
+import { action as leadInfoAction } from '../skills/lead-info/src/index.mjs';
 import { action as newsAction } from '../skills/news/src/index.mjs';
 
-test('leadInfo skill returns parsed lead data and related session history', async (t) => {
+test('lead-info skill returns parsed lead data and related session history', async (t) => {
     const sandbox = await createWebAdminSandbox();
     t.after(async () => sandbox.cleanup());
 

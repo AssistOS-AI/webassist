@@ -28,9 +28,9 @@ function createFakeWebAdminLLM(LLMAgent) {
             const classifierSource = userPrompt || prompt || '';
 
             if (classifierSource.includes('converted') || classifierSource.includes('marcheaza')) {
-                if (!prompt.includes('TOOL[updatelead]')) {
+                if (!prompt.includes('TOOL[update-lead]')) {
                     return {
-                        tool: 'updatelead',
+                        tool: 'update-lead',
                         toolPrompt: JSON.stringify({
                             leadId: 'dev-session-lead.md',
                             newStatus: 'converted',
@@ -85,7 +85,7 @@ function createFakeWebAdminLLM(LLMAgent) {
                     leadId: 'dev-session-lead.md',
                     newStatus: 'converted',
                 };
-                await runCommand('updateLead', [JSON.stringify(args)]);
+                await runCommand('update-lead', [JSON.stringify(args)]);
                 lastResult = 'Am actualizat leadul dev-session-lead.md la statusul converted.';
             } else {
                 const args = { interval: 'month' };

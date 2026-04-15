@@ -13,11 +13,11 @@ Skill runtime note:
 - Owner requests are orchestrated by the `admin-flow` **oskills**.
   - `admin-flow` returns a plain-text response string for the owner.
 
-## Skill: updateLead
+## Skill: update-lead
 - **Function**: Manages the lifecycle of a lead in `leads/`.
 - **States**: Transitions a lead from `new` to `invalid`, `contacted`, or `converted`.
 
-## Skill: leadInfo
+## Skill: lead-info
 - **Function**: Displays comprehensive profiling and interaction data for a selected lead.
 
 ## Skill: statistics

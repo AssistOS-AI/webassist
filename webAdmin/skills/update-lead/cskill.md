@@ -1,4 +1,4 @@
-# updateLead
+# update-lead
 
 ## Summary
 Updates the lifecycle status of an existing lead.
