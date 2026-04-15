@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import { randomBytes } from 'node:crypto';
 import path from 'node:path';
 import readline from 'node:readline';
 import { fileURLToPath } from 'node:url';
@@ -7,12 +8,19 @@ import { fileURLToPath } from 'node:url';
 import { createWebAdminAgent } from './WebAdminAgent.mjs';
 
 function printUsage() {
-    process.stdout.write(`Usage:\n  webAdmin/src/index.mjs "message"\n\nOptions:\n  --json                       Print JSON output from runtime\n  --data-dir <dir>             Override data directory\n  --agent-root <dir>           Override agent root directory\n  -h, --help                   Show this help\n`);
+    process.stdout.write(`Usage:\n  webAdmin/src/index.mjs "message"\n\nOptions:\n  --session-id <id>            Reuse a specific session id\n  --json                       Print JSON output from runtime\n  --data-dir <dir>             Override data directory\n  --agent-root <dir>           Override agent root directory\n  -h, --help                   Show this help\n`);
+}
+
+function generateSessionId() {
+    const timestamp = new Date().toISOString().replace(/[-:.]/g, '').replace(/\.\d+Z$/, 'Z');
+    const nonce = randomBytes(4).toString('hex');
+    return `session-${timestamp}-${nonce}`;
 }
 
 function parseArguments(argv) {
     const positionals = [];
     const options = {
+        sessionId: '',
         json: false,
         dataDir: '',
         agentRoot: '',
@@ -36,6 +44,21 @@ function parseArguments(argv) {
 
         if (token === '-h' || token === '--help') {
             options.help = true;
+            continue;
+        }
+
+        if (token.startsWith('--session-id=')) {
+            options.sessionId = token.slice('--session-id='.length);
+            continue;
+        }
+
+        if (token === '--session-id') {
+            const value = argv[index + 1];
+            if (!value) {
+                throw new Error('Missing value for --session-id');
+            }
+            options.sessionId = value;
+            index += 1;
             continue;
         }
 
@@ -82,8 +105,8 @@ function parseArguments(argv) {
     };
 }
 
-async function runTurn(agent, { message, jsonOutput }) {
-    const result = await agent.handleMessage({ message });
+async function runTurn(agent, { sessionId, message, jsonOutput }) {
+    const result = await agent.handleMessage({ sessionId, message });
     if (jsonOutput) {
         process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
         return;
@@ -93,11 +116,13 @@ async function runTurn(agent, { message, jsonOutput }) {
 
 async function runInteractive(agent, state) {
     if (!state.json) {
+        process.stdout.write(`Session ID: ${state.sessionId}\n`);
         process.stdout.write('Type exit to leave\n');
     }
 
     if (state.message) {
         await runTurn(agent, {
+            sessionId: state.sessionId,
             message: state.message,
             jsonOutput: state.json,
         });
@@ -129,6 +154,7 @@ async function runInteractive(agent, state) {
         }
 
         await runTurn(agent, {
+            sessionId: state.sessionId,
             message: text,
             jsonOutput: state.json,
         });
@@ -141,6 +167,10 @@ async function main() {
     if (cli.help) {
         printUsage();
         return;
+    }
+
+    if (!cli.sessionId) {
+        cli.sessionId = generateSessionId();
     }
 
     const agent = await createWebAdminAgent({

@@ -1,14 +1,14 @@
-# DS007 - Skill: create-profile
+# DS007 - Skill: manage-profile
 
 ## Goal
-Create a reusable profiling template for the webCli agent in `data/profilesInfo/`.
+Create or update a profiling template for the webCli agent in `data/profilesInfo/`.
 
 ## Mechanism
 A **cskill** executed through `RecursiveSkilledAgent` when the owner requests a new profile.
 
 ## Tool Definition
-- **Name**: `create-profile`
-- **Description**: Writes a new profile markdown file with characteristics, interests, and qualifying criteria.
+- **Name**: `manage-profile`
+- **Description**: Creates or updates a profile markdown file with characteristics, interests, and qualifying criteria.
 - **Inputs**:
   - `profileName` (string): File name base or full `.md` name for the profile.
   - `characteristics` (array of strings)
@@ -19,6 +19,7 @@ A **cskill** executed through `RecursiveSkilledAgent` when the owner requests a 
 A JSON object containing:
 - `success` (boolean)
 - `created` (boolean)
+- `updated` (boolean)
 - `profileName` (string)
 - `profilePath` (string)
 - `profile` (object) with the provided lists
@@ -26,7 +27,7 @@ A JSON object containing:
 ## Execution Logic (Node.js)
 1. Validate `profileName` and reject path separators or empty names.
 2. Normalize the filename to include `.md`.
-3. Reject creation if the file already exists.
+3. Find existing profiles by case-insensitive match on the filename.
 4. Create `data/profilesInfo/` if missing.
 5. Write the profile file with:
    - `## Characteristics`

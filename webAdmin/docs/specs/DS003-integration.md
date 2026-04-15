@@ -17,6 +17,7 @@ The **webAdmin** agent is implemented as a Node.js CLI tool for site owners. It 
 
 ## CLI Parameters
 - `<message>` (positional): Owner message text. In interactive mode it can be omitted at startup and provided turn-by-turn.
+- `--session-id <id>` / `--session-id=<id>`: Reuse a specific session id for the interactive process.
 - `--json`: Print JSON output from runtime instead of plain text response.
 - `--data-dir <dir>` / `--data-dir=<dir>`: Override the runtime data directory used for `config/`, `info/`, `profilesInfo/`, `leads/`, and `sessions/`.
 - `--agent-root <dir>` / `--agent-root=<dir>`: Override the agent root used by runtime initialization.
@@ -28,6 +29,7 @@ The **webAdmin** agent is implemented as a Node.js CLI tool for site owners. It 
 ## Runtime Mode
 ### Interactive Mode (default)
 - **Behavior**: Starts a chat loop in terminal and keeps the process alive across multiple owner turns.
+- **Session Handling**: A sessionId is generated at startup (or provided via `--session-id`) and reused for all turns.
 - **Exit Controls**: The interactive loop allows exiting by typing `exit`/`quit`/`:q` or by pressing `Ctrl+C`.
 - **Example**: `node webAdmin/src/index.mjs "Arata ultimele leaduri"`
 
@@ -49,6 +51,7 @@ The **webAdmin** agent is implemented as a Node.js CLI tool for site owners. It 
 - During runtime, webAdmin calls `RecursiveSkilledAgent.executePrompt(...)` without explicit skill name.
 - `RecursiveSkilledAgent` selects `admin-flow`, and that orchestrator invokes cskills as needed.
 - `admin-flow` returns a **plain text** owner-facing response string (no JSON).
+- The sessionId is forwarded to `RecursiveSkilledAgent` to isolate multi-user sessions in shared instances.
 
 ## CLI Delegation Flow
 - The Node.js launcher `webAdmin/src/index.mjs` initializes `WebAdminAgent` and executes conversation turns.

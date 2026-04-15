@@ -29,8 +29,11 @@ Skill runtime note:
 - **Function**: Summarizes recent lead activity.
 - **Output**: Recent entries in `leads/` with a brief overview of their status and profile.
 
-## Skill: create-profile
-- **Function**: Creates a profiling template in `profilesInfo/` for the webCli agent to use when matching visitors.
+## Skill: manage-profile
+- **Function**: Creates or updates a profiling template in `profilesInfo/` for the webCli agent to use when matching visitors.
+
+## Skill: list-profiles
+- **Function**: Lists available profile templates (names without `.md` extension).
 
 ## Skill: admin-flow
 - **Function**: Orchestrates owner requests by selecting and executing exactly one admin skill per turn.

@@ -1,7 +1,7 @@
-# create-profile
+# manage-profile
 
 ## Summary
-Creates a new profiling template in `data/profilesInfo/` for the webCli agent to use during visitor matching.
+Creates or updates a profiling template in `data/profilesInfo/` for the webCli agent to use during visitor matching.
 
 ## Input Format
 - `promptText` contains a JSON object with:
@@ -14,6 +14,7 @@ Creates a new profiling template in `data/profilesInfo/` for the webCli agent to
 - `object` with:
   - `success` (boolean)
   - `created` (boolean)
+  - `updated` (boolean)
   - `profileName` (string)
   - `profilePath` (string)
   - `profile` (object) on success
@@ -21,5 +22,5 @@ Creates a new profiling template in `data/profilesInfo/` for the webCli agent to
 
 ## Constraints
 - Rejects invalid or unsafe profile names.
-- Fails if the target profile file already exists.
+- Matches existing profiles case-insensitively and updates them in place.
 - Does not call the LLM.

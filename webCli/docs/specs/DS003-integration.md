@@ -90,6 +90,7 @@ MCP input note:
 - `WebCliAgent` initializes one `RecursiveSkilledAgent` instance and delegates each turn through `executePrompt(...)`.
 - In interactive mode, the launcher calls the runtime repeatedly (one call per turn) while preserving the same `sessionId`.
 - In MCP mode, the launcher performs a single runtime call and exits.
+- The sessionId is forwarded to `RecursiveSkilledAgent` to isolate multi-user sessions in a shared agent instance.
 
 ## Communication Language
 - **Input/Output**: Communication with the visitor can be in any language.

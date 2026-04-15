@@ -8,11 +8,11 @@ function parseInput(promptText) {
     try {
         parsed = JSON.parse(String(promptText ?? '{}'));
     } catch {
-        throw new Error('create-profile expects promptText to be a valid JSON object.');
+        throw new Error('manage-profile expects promptText to be a valid JSON object.');
     }
 
     if (!parsed || typeof parsed !== 'object') {
-        throw new Error('create-profile input must be an object.');
+        throw new Error('manage-profile input must be an object.');
     }
     return parsed;
 }
@@ -54,6 +54,30 @@ function normalizeProfileFileName(profileName) {
     }
 
     return { ok: true, fileName };
+}
+
+async function findExistingProfileFile(profilesDir, fileName) {
+    const target = fileName.toLowerCase();
+    let entries;
+    try {
+        entries = await fs.readdir(profilesDir, { withFileTypes: true });
+    } catch (error) {
+        if (error && error.code === 'ENOENT') {
+            return null;
+        }
+        throw error;
+    }
+
+    for (const entry of entries) {
+        if (!entry.isFile() || !entry.name.endsWith('.md')) {
+            continue;
+        }
+        if (entry.name.toLowerCase() === target) {
+            return entry.name;
+        }
+    }
+
+    return null;
 }
 
 function renderListSection(items) {
@@ -104,19 +128,9 @@ export async function action({ promptText, dataDir = './data' }) {
     }
 
     const profilesDir = path.join(dataDir, 'profilesInfo');
-    const profilePath = path.join(profilesDir, normalizedProfileName.fileName);
-
-    try {
-        await fs.stat(profilePath);
-        return {
-            success: false,
-            error: `Profile already exists: ${normalizedProfileName.fileName}`,
-        };
-    } catch (error) {
-        if (!error || error.code !== 'ENOENT') {
-            throw error;
-        }
-    }
+    const existingFileName = await findExistingProfileFile(profilesDir, normalizedProfileName.fileName);
+    const fileName = existingFileName || normalizedProfileName.fileName;
+    const profilePath = path.join(profilesDir, fileName);
 
     await ensureDirectory(profilesDir);
     const content = renderProfileMarkdown({
@@ -128,8 +142,9 @@ export async function action({ promptText, dataDir = './data' }) {
 
     return {
         success: true,
-        created: true,
-        profileName: normalizedProfileName.fileName,
+        created: !existingFileName,
+        updated: Boolean(existingFileName),
+        profileName: fileName,
         profilePath,
         profile: {
             characteristics: normalizedCharacteristics.items,

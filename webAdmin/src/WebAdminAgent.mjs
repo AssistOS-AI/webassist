@@ -83,7 +83,7 @@ export async function createWebAdminAgent({
         agentRoot: resolvedAgentRoot,
         dataDir: resolvedDataDir,
         recursiveAgent,
-        async handleMessage({ message, mode = 'fast', referenceDate = new Date() }) {
+        async handleMessage({ sessionId = null, message, mode = 'fast', referenceDate = new Date() }) {
             if (!message) {
                 throw new Error('webAdmin.handleMessage requires a message.');
             }
@@ -95,9 +95,11 @@ export async function createWebAdminAgent({
             }), {
                 model: mode,
                 context: {
+                    ...(sessionId ? { sessionId } : {}),
                     dataDir: resolvedDataDir,
                     referenceDate,
                     webadmin: {
+                        ...(sessionId ? { sessionId } : {}),
                         dataDir: resolvedDataDir,
                         availableLeadIds,
                         referenceDate,
