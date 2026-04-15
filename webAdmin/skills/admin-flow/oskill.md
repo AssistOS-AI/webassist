@@ -26,6 +26,9 @@ Trigger keywords include: "news", "latest leads", "statistics", "stats", "lead i
    - `list-profiles` → call `list-profiles` with JSON arguments (empty object when listing all).
 4. Draft the owner-facing response in the same language as the owner message. Use the skill result to answer concisely.
    - All operational text, tool selection reasoning, and any intermediate notes must be in English.
+   - any text you use from the user MUST be translated to english
+   - any text used as parameters for the skills you call MUST be translated to english
+   - only respond in the user's language when addressing to them.
 5. Return **plain text only** — the final owner-facing response string (no JSON).
 
 ## Allowed Skills
