@@ -5,10 +5,12 @@ import path from 'node:path';
 
 import { createWebCliSandbox } from './helpers.mjs';
 import { updateSession } from '../src/runtime/update-session.mjs';
+import { configureDataStore } from '../src/runtime/dataStore.mjs';
 
 test('update-session.runtime writes and appends the structured session file', async (t) => {
     const sandbox = await createWebCliSandbox();
     t.after(async () => sandbox.cleanup());
+    configureDataStore({ agentRoot: sandbox.agentRoot, dataDir: sandbox.dataDir });
 
     const firstResult = await updateSession({
         sessionId: 'test-session-1',
@@ -16,7 +18,6 @@ test('update-session.runtime writes and appends the structured session file', as
         agentResponse: 'Hi there!',
         profiles: ['Developer.md'],
         profileDetails: ['Understands the API basics'],
-        dataDir: sandbox.dataDir,
     });
 
     assert.equal(firstResult.success, true);
@@ -27,7 +28,6 @@ test('update-session.runtime writes and appends the structured session file', as
         agentResponse: 'Happy to help.\nCan you share your timeline?',
         profiles: ['Developer.md', 'Developer.md', 'EnterpriseClient.md'],
         profileDetails: ['Understands the API basics', 'Urgent integration timeline'],
-        dataDir: sandbox.dataDir,
     });
 
     assert.equal(secondResult.success, true);

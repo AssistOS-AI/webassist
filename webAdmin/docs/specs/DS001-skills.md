@@ -10,6 +10,7 @@ Skill runtime note:
 - Operational webAdmin skills are implemented as **cskills** (`cskill.md` + `src/index.mjs`).
 - They are discovered and registered from `webAdmin/skills/` by `RecursiveSkilledAgent`.
 - Execution is routed through `RecursiveSkilledAgent` skill execution APIs.
+- File persistence is handled through `MarkdownDataStore` (AchillesAgentLib) with numbered markdown sections (`### N. Section Name`).
 - Owner requests are orchestrated by the `admin-flow` **oskills**.
   - `admin-flow` returns a plain-text response string for the owner.
 

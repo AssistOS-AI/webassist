@@ -5,10 +5,12 @@ import path from 'node:path';
 
 import { createWebCliSandbox } from './helpers.mjs';
 import { action } from '../skills/create-lead/src/index.mjs';
+import { configureDataStore } from '../src/runtime/dataStore.mjs';
 
 test('create-lead writes a deterministic lead file and updates it in place', async (t) => {
     const sandbox = await createWebCliSandbox();
     t.after(async () => sandbox.cleanup());
+    configureDataStore({ agentRoot: sandbox.agentRoot, dataDir: sandbox.dataDir });
 
     const firstResult = await action({
         promptText: JSON.stringify({
@@ -17,7 +19,6 @@ test('create-lead writes a deterministic lead file and updates it in place', asy
             profile: 'Developer',
             summary: 'Wants to integrate an API.',
         }),
-        dataDir: sandbox.dataDir,
     });
 
     assert.equal(firstResult.success, true);
@@ -31,7 +32,6 @@ test('create-lead writes a deterministic lead file and updates it in place', asy
             profile: 'Developer',
             summary: 'Ready to scope an implementation call.',
         }),
-        dataDir: sandbox.dataDir,
     });
 
     assert.equal(secondResult.success, true);

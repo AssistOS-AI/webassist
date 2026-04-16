@@ -1,7 +1,8 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
-import { ensureDirectory } from '../../../../webassist-shared/dataStore.mjs';
+import { getConfiguredDataDir, getDataStore } from '../../../src/runtime/dataStore.mjs';
+import { DATASTORE_TYPES, PROFILE_SECTIONS } from '../../../src/constants/datastore.mjs';
 
 function parseInput(promptText) {
     let parsed;
@@ -80,26 +81,7 @@ async function findExistingProfileFile(profilesDir, fileName) {
     return null;
 }
 
-function renderListSection(items) {
-    return items.length > 0
-        ? items.map((item) => `- ${item}`).join('\n')
-        : '*None*';
-}
-
-function renderProfileMarkdown({ characteristics, interests, qualifyingCriteria }) {
-    return [
-        '## Characteristics',
-        renderListSection(characteristics),
-        '',
-        '## Interests',
-        renderListSection(interests),
-        '',
-        '## Qualifying criteria',
-        renderListSection(qualifyingCriteria),
-    ].join('\n');
-}
-
-export async function action({ promptText, dataDir = './data' }) {
+export async function action({ promptText }) {
     const {
         profileName,
         characteristics,
@@ -127,24 +109,38 @@ export async function action({ promptText, dataDir = './data' }) {
         return { success: false, error: normalizedCriteria.error };
     }
 
-    const profilesDir = path.join(dataDir, 'profilesInfo');
+    const store = getDataStore();
+    const profilesDir = path.join(getConfiguredDataDir(), DATASTORE_TYPES.PROFILES_INFO);
     const existingFileName = await findExistingProfileFile(profilesDir, normalizedProfileName.fileName);
-    const fileName = existingFileName || normalizedProfileName.fileName;
-    const profilePath = path.join(profilesDir, fileName);
+    const fileName = (existingFileName || normalizedProfileName.fileName).replace(/\.md$/i, '');
 
-    await ensureDirectory(profilesDir);
-    const content = renderProfileMarkdown({
-        characteristics: normalizedCharacteristics.items,
-        interests: normalizedInterests.items,
-        qualifyingCriteria: normalizedCriteria.items,
+    try {
+        const current = await store.getFile(DATASTORE_TYPES.PROFILES_INFO, fileName);
+        if (current.sections.length > 0) {
+            await store.deleteFile(
+                DATASTORE_TYPES.PROFILES_INFO,
+                fileName,
+                current.sections.map((section) => section.index)
+            );
+        }
+    } catch (error) {
+        if (!error || error.code !== 'ENOENT') {
+            throw error;
+        }
+    }
+
+    await store.updateFile(DATASTORE_TYPES.PROFILES_INFO, fileName, {
+        [PROFILE_SECTIONS.CHARACTERISTICS]: store.renderList(normalizedCharacteristics.items),
+        [PROFILE_SECTIONS.INTERESTS]: store.renderList(normalizedInterests.items),
+        [PROFILE_SECTIONS.QUALIFYING_CRITERIA]: store.renderList(normalizedCriteria.items),
     });
-    await fs.writeFile(profilePath, `${content}\n`, 'utf8');
+    const profilePath = path.join(profilesDir, `${fileName}.md`);
 
     return {
         success: true,
         created: !existingFileName,
         updated: Boolean(existingFileName),
-        profileName: fileName,
+        profileName: `${fileName}.md`,
         profilePath,
         profile: {
             characteristics: normalizedCharacteristics.items,

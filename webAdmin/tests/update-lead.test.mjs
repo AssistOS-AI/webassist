@@ -5,17 +5,18 @@ import path from 'node:path';
 
 import { createWebAdminSandbox } from './helpers.mjs';
 import { action } from '../skills/update-lead/src/index.mjs';
+import { configureDataStore } from '../src/runtime/dataStore.mjs';
 
 test('update-lead updates lead lifecycle state and rejects invalid cases', async (t) => {
     const sandbox = await createWebAdminSandbox();
     t.after(async () => sandbox.cleanup());
+    configureDataStore({ agentRoot: sandbox.agentRoot, dataDir: sandbox.dataDir });
 
     const result = await action({
         promptText: JSON.stringify({
             leadId: 'dev-session-lead.md',
             newStatus: 'contacted',
         }),
-        dataDir: sandbox.dataDir,
     });
 
     assert.equal(result.success, true);
@@ -33,7 +34,6 @@ test('update-lead updates lead lifecycle state and rejects invalid cases', async
             leadId: 'dev-session-lead.md',
             newStatus: 'new',
         }),
-        dataDir: sandbox.dataDir,
     });
     assert.equal(invalidStatus.success, false);
     assert.match(invalidStatus.error, /Invalid status/);
@@ -43,7 +43,6 @@ test('update-lead updates lead lifecycle state and rejects invalid cases', async
             leadId: 'missing.md',
             newStatus: 'invalid',
         }),
-        dataDir: sandbox.dataDir,
     });
     assert.equal(missingLead.success, false);
     assert.match(missingLead.error, /Lead not found/);

@@ -5,14 +5,15 @@ import path from 'node:path';
 
 import { createWebCliSandbox } from './helpers.mjs';
 import { action } from '../skills/book-meeting/src/index.mjs';
+import { configureDataStore } from '../src/runtime/dataStore.mjs';
 
 test('book-meeting returns the owner configuration and errors on missing config', async (t) => {
     const sandbox = await createWebCliSandbox();
     t.after(async () => sandbox.cleanup());
+    configureDataStore({ agentRoot: sandbox.agentRoot, dataDir: sandbox.dataDir });
 
     const successResult = await action({
         promptText: JSON.stringify({ sessionId: 'session1' }),
-        dataDir: sandbox.dataDir,
     });
     assert.match(successResult, /Calendar link: https:\/\/cal\.example\.com\/webassist-demo/);
 
@@ -23,7 +24,6 @@ test('book-meeting returns the owner configuration and errors on missing config'
     await assert.rejects(
         () => action({
             promptText: JSON.stringify({ sessionId: 'session1' }),
-            dataDir: sandbox.dataDir,
         }),
         /No configuration found/
     );

@@ -64,7 +64,7 @@ MCP input note:
 - **Mandatory Usage**: Access to LLMs must be through this library.
 - **Import Mechanism**: The runtime imports AchillesAgentLib directly from resolved `node_modules`.
 - **Loading Logic**:
-  - Use direct import syntax: `import { RecursiveSkilledAgent } from "achillesAgentLib";`.
+  - Use direct import syntax: `import { RecursiveSkilledAgent, MarkdownDataStore } from "achillesAgentLib";`.
   - Do not use filesystem scanning loaders for webCli Achilles resolution.
 
 ## Base Class: RecursiveSkilledAgent
@@ -84,6 +84,11 @@ MCP input note:
 - The loaded context is embedded in the orchestration prompt and forwarded in execution context.
 - After orchestration returns, webCli runs runtime module `update-session` from `webCli/src/runtime/update-session.mjs`.
 - Session persistence is therefore explicit runtime behavior, not a cskill invocation.
+- Runtime data access is centralized through `webCli/src/runtime/dataStore.mjs`.
+- The datastore is configured exactly once when `createWebCliAgent(...)` is initialized (default `webassist-shared/data`, or CLI `--data-dir` override).
+- Runtime modules and skills only consume the configured datastore instance and must not accept per-call datastore overrides.
+- Datastore names and section labels are centralized in `webCli/src/constants/datastore.mjs` and must be reused across runtime/skills (no hardcoded folder/section literals in business logic).
+- Markdown parsing/rendering and section normalization rules (including `*None*` fallback for empty section content) are handled by Achilles `MarkdownDataStore`, not by agent datastore modules.
 
 ## CLI Delegation Flow
 - The Node.js launcher `webCli/src/index.mjs` initializes `WebCliAgent` and executes conversation turns.

@@ -1,7 +1,8 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
-import { ensureDirectory } from '../../../../webassist-shared/dataStore.mjs';
+import { getConfiguredDataDir, getDataStore } from '../../../src/runtime/dataStore.mjs';
+import { DATASTORE_TYPES } from '../../../src/constants/datastore.mjs';
 
 const PREFIXES = [
     { key: 'email', label: 'Email:' },
@@ -65,9 +66,11 @@ async function readOwnerFile(filePath) {
     }
 }
 
-export async function action({ promptText, dataDir = './data' }) {
+export async function action({ promptText }) {
     const payload = parseInput(promptText);
-    const configDir = path.join(dataDir, 'config');
+    const store = getDataStore();
+    const dataDir = getConfiguredDataDir();
+    const configDir = path.join(dataDir, DATASTORE_TYPES.CONFIG);
     const ownerPath = path.join(configDir, 'owner.md');
 
     if (payload.read === true) {
@@ -79,8 +82,17 @@ export async function action({ promptText, dataDir = './data' }) {
     }
 
     if (typeof payload.content === 'string' && payload.content.trim()) {
-        await ensureDirectory(configDir);
-        await fs.writeFile(ownerPath, `${payload.content.trim()}\n`, 'utf8');
+        try {
+            const current = await store.getFile(DATASTORE_TYPES.CONFIG, 'owner');
+            if (current.sections.length > 0) {
+                await store.deleteFile(DATASTORE_TYPES.CONFIG, 'owner', current.sections.map((section) => section.index));
+            }
+        } catch (error) {
+            if (!error || error.code !== 'ENOENT') {
+                throw error;
+            }
+        }
+        await store.updateFile(DATASTORE_TYPES.CONFIG, 'owner', { Content: payload.content.trim() });
         return { success: true, updated: true };
     }
 
@@ -95,7 +107,7 @@ export async function action({ promptText, dataDir = './data' }) {
         return { success: false, error: 'No updates provided.' };
     }
 
-    await ensureDirectory(configDir);
+    await fs.mkdir(configDir, { recursive: true });
     const existing = await readOwnerFile(ownerPath);
     const lines = existing ? existing.split(/\r?\n/) : [];
     const updatedLines = updateLines(lines, updates);

@@ -6,14 +6,15 @@ import path from 'node:path';
 import { createWebAdminSandbox } from './helpers.mjs';
 import { action as leadInfoAction } from '../skills/lead-info/src/index.mjs';
 import { action as newsAction } from '../skills/news/src/index.mjs';
+import { configureDataStore } from '../src/runtime/dataStore.mjs';
 
 test('lead-info skill returns parsed lead data and related session history', async (t) => {
     const sandbox = await createWebAdminSandbox();
     t.after(async () => sandbox.cleanup());
+    configureDataStore({ agentRoot: sandbox.agentRoot, dataDir: sandbox.dataDir });
 
     const result = await leadInfoAction({
         promptText: JSON.stringify({ leadId: 'dev-session-lead.md' }),
-        dataDir: sandbox.dataDir,
     });
     assert.equal(result.success, true);
     assert.equal(result.info.leadData.profile, 'Developer');
@@ -25,26 +26,26 @@ test('lead-info skill returns parsed lead data and related session history', asy
 test('news skill returns the newest lead summaries first', async (t) => {
     const sandbox = await createWebAdminSandbox();
     t.after(async () => sandbox.cleanup());
+    configureDataStore({ agentRoot: sandbox.agentRoot, dataDir: sandbox.dataDir });
 
     const latestLeadPath = path.join(sandbox.dataDir, 'leads', 'newest-session-lead.md');
-    await fs.writeFile(latestLeadPath, `### Lead Info
+    await fs.writeFile(latestLeadPath, `### 1. Lead Info
 - **Status**: new
 - **Profile**: Developer
 - **Session ID**: newest-session
 - **Created At**: 2026-04-06T11:30:00.000Z
 - **Updated At**: 2026-04-06T11:30:00.000Z
 
-### Contact Info
+### 2. Contact Info
 - **email**: newest@example.com
 - **name**: Nova Newest
 
-### Summary
+### 3. Summary
 Newest lead for admin news coverage.
 `);
 
     const result = await newsAction({
         promptText: JSON.stringify({ limit: 2 }),
-        dataDir: sandbox.dataDir,
     });
     assert.equal(result.success, true);
     assert.equal(result.leads.length, 2);

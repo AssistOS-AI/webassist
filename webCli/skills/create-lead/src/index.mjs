@@ -1,11 +1,27 @@
-import path from 'node:path';
-
 import {
-    createLeadFileName,
-    readLeadFile,
-    toIsoTimestamp,
-    writeLeadFile,
-} from '../../../../webassist-shared/dataStore.mjs';
+    getDataStore,
+} from '../../../src/runtime/dataStore.mjs';
+import { DATASTORE_TYPES, LEAD_FIELDS, LEAD_SECTIONS } from '../../../src/constants/datastore.mjs';
+
+function createLeadFileName(sessionId) {
+    return `${sessionId}-lead`;
+}
+
+function normalizeLeadId(leadId) {
+    const normalized = String(leadId ?? '').trim();
+    if (!normalized) {
+        throw new Error('leadId is required.');
+    }
+    return normalized.endsWith('.md') ? normalized.slice(0, -3) : normalized;
+}
+
+function toIsoTimestamp(value = new Date()) {
+    const date = value instanceof Date ? value : new Date(value);
+    if (Number.isNaN(date.getTime())) {
+        throw new Error('Cannot convert invalid date to ISO timestamp.');
+    }
+    return date.toISOString();
+}
 
 function parseInput(promptText) {
     let parsed;
@@ -33,7 +49,7 @@ function normalizeContactInfo(contactInfo) {
     return Object.fromEntries(entries);
 }
 
-export async function action({ promptText, dataDir = './data' }) {
+export async function action({ promptText }) {
     const {
         sessionId,
         contactInfo,
@@ -46,13 +62,19 @@ export async function action({ promptText, dataDir = './data' }) {
     }
 
     const normalizedContactInfo = normalizeContactInfo(contactInfo);
-    const leadId = createLeadFileName(sessionId);
-    const leadPath = path.join(dataDir, 'leads', leadId);
+    const store = getDataStore();
+    const leadId = `${createLeadFileName(sessionId)}.md`;
+    const normalizedLeadId = normalizeLeadId(leadId);
     const timestamp = toIsoTimestamp();
 
     let existingLead = null;
     try {
-        existingLead = await readLeadFile(leadPath);
+        const existing = await store.getSectionMap(DATASTORE_TYPES.LEADS, normalizedLeadId);
+        const leadInfo = store.parseKeyValue(existing.sections[LEAD_SECTIONS.LEAD_INFO]);
+        existingLead = {
+            createdAt: String(leadInfo[LEAD_FIELDS.CREATED_AT] ?? '').trim(),
+            status: String(leadInfo[LEAD_FIELDS.STATUS] ?? '').trim(),
+        };
     } catch (error) {
         if (!error || error.code !== 'ENOENT') {
             throw error;
@@ -60,25 +82,34 @@ export async function action({ promptText, dataDir = './data' }) {
     }
 
     const leadRecord = {
-        status: existingLead?.parsed?.status || 'new',
+        status: existingLead?.status || 'new',
         profile,
         sessionId,
         contactInfo: normalizedContactInfo,
         summary,
-        createdAt: existingLead?.parsed?.createdAt || timestamp,
+        createdAt: existingLead?.createdAt || timestamp,
         updatedAt: timestamp,
     };
-
-    const content = await writeLeadFile(leadPath, leadRecord);
+    const saved = await store.replaceFile(DATASTORE_TYPES.LEADS, normalizedLeadId, {
+        [LEAD_SECTIONS.LEAD_INFO]: [
+            `- **${LEAD_FIELDS.STATUS}**: ${leadRecord.status}`,
+            `- **${LEAD_FIELDS.PROFILE}**: ${leadRecord.profile}`,
+            `- **${LEAD_FIELDS.SESSION_ID}**: ${leadRecord.sessionId}`,
+            `- **${LEAD_FIELDS.CREATED_AT}**: ${leadRecord.createdAt}`,
+            `- **${LEAD_FIELDS.UPDATED_AT}**: ${leadRecord.updatedAt}`,
+        ].join('\n'),
+        [LEAD_SECTIONS.CONTACT_INFO]: store.renderKeyValue(leadRecord.contactInfo),
+        [LEAD_SECTIONS.SUMMARY]: String(leadRecord.summary ?? '').trim(),
+    });
 
     return {
         success: true,
         created: !existingLead,
         leadId,
-        leadPath,
+        leadPath: `${normalizedLeadId}.md`,
         lead: {
             ...leadRecord,
-            rawContent: content,
+            rawContent: saved.rawMarkdown,
         },
     };
 }

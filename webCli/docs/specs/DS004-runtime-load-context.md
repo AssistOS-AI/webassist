@@ -10,7 +10,6 @@ Load all visitor-turn context before orchestration starts, so the agentic loop r
 - **Name**: `load-context`
 - **Input**:
   - `sessionId` (string, required)
-  - `dataDir` (string, required)
 - **Output**:
   - `siteInfo` (array)
   - `profilesInfo` (array)
@@ -24,3 +23,7 @@ Load all visitor-turn context before orchestration starts, so the agentic loop r
 2. Read markdown files from `data/profilesInfo/`.
 3. Read and parse `data/sessions/{sessionId}.md` if it exists.
 4. Return both structured and combined-text context used by the orchestrator prompt.
+
+## Datastore Source
+- `load-context` uses the datastore singleton configured at agent startup.
+- It does not accept runtime `dataDir` overrides.

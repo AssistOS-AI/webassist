@@ -36,7 +36,7 @@ The **webAdmin** agent is implemented as a Node.js CLI tool for site owners. It 
 - **Mandatory Usage**: Access to LLMs must be through this library.
 - **Import Mechanism**: The runtime imports AchillesAgentLib directly from resolved `node_modules`.
 - **Loading Logic**:
-  - Use direct import syntax: `import { RecursiveSkilledAgent } from "achillesAgentLib";`.
+  - Use direct import syntax: `import { RecursiveSkilledAgent, MarkdownDataStore } from "achillesAgentLib";`.
   - Do not use filesystem scanning loaders for webAdmin Achilles resolution.
 
 ## Base Agent: RecursiveSkilledAgent
@@ -51,6 +51,11 @@ The **webAdmin** agent is implemented as a Node.js CLI tool for site owners. It 
 - `RecursiveSkilledAgent` selects `admin-flow`, and that orchestrator invokes cskills as needed.
 - `admin-flow` returns a **plain text** owner-facing response string (no JSON).
 - The sessionId is forwarded to `RecursiveSkilledAgent` to isolate multi-user sessions in shared instances.
+- Runtime data access is centralized through `webAdmin/src/runtime/dataStore.mjs`.
+- The datastore is configured exactly once when `createWebAdminAgent(...)` is initialized (default `webassist-shared/data`, or CLI `--data-dir` override).
+- Runtime modules and skills only consume the configured datastore instance and must not accept per-call datastore overrides.
+- Datastore folder names and section labels are centralized in `webAdmin/src/constants/datastore.mjs` and must be reused across runtime/skills (no hardcoded folder/section literals in business logic).
+- Markdown parsing/rendering and section normalization rules (including `*None*` fallback for empty section content) are handled by Achilles `MarkdownDataStore`, not by agent datastore modules.
 
 ## CLI Delegation Flow
 - The Node.js launcher `webAdmin/src/index.mjs` initializes `WebAdminAgent` and executes conversation turns.

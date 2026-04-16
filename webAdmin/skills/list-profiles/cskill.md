@@ -1,16 +1,23 @@
 # list-profiles
 
 ## Description
-Lists available profiling templates from `data/profilesInfo/`.
+Lists available profiling templates from `data/profilesInfo/`, or returns full/filtered section content for one profile.
 
 ## Input Format
-- `promptText` contains a JSON object (optional, currently unused).
+- `promptText` contains an optional JSON object with:
+  - `profileName` (string, optional)
+  - `sections` (array of strings, optional)
 
 ## Output Format
-- `object` with:
+- If `profileName` is missing:
   - `success` (boolean)
   - `profiles` (array of strings, without `.md`)
+- If `profileName` is provided:
+  - `success` (boolean)
+  - `profileName` (string)
+  - `content` (string)
+  - `sectionsDisplayed` (array of strings)
 
 ## Constraints
-- Returns profile names without file extensions.
+- Reads numbered markdown sections (`### N. Name`) and renders owner output with `## Name` headings.
 - Does not call the LLM.

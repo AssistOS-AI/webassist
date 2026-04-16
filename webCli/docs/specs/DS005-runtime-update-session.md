@@ -14,7 +14,6 @@ Persist the current visitor turn after orchestration completes, so session state
   - `agentResponse` (string, required, English)
   - `profiles` (string[])
   - `profileDetails` (string[])
-  - `dataDir` (string, required)
 - **Output**:
   - `success` (boolean)
   - `sessionId` (string)
@@ -26,3 +25,7 @@ Persist the current visitor turn after orchestration completes, so session state
 2. Merge and de-duplicate `profiles` and `profileDetails`.
 3. Append current user/agent history entries.
 4. Render and write session markdown using DS001 structure.
+
+## Datastore Source
+- `update-session` uses the datastore singleton configured at agent startup.
+- It does not accept runtime `dataDir` overrides.

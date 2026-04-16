@@ -4,10 +4,12 @@ import assert from 'node:assert/strict';
 import { createWebCliSandbox } from './helpers.mjs';
 import { updateSession } from '../src/runtime/update-session.mjs';
 import { loadContext } from '../src/runtime/load-context.mjs';
+import { configureDataStore } from '../src/runtime/dataStore.mjs';
 
 test('load-context.runtime loads info, profile definitions, and parsed session state', async (t) => {
     const sandbox = await createWebCliSandbox();
     t.after(async () => sandbox.cleanup());
+    configureDataStore({ agentRoot: sandbox.agentRoot, dataDir: sandbox.dataDir });
 
     await updateSession({
         sessionId: 'sess1',
@@ -15,12 +17,10 @@ test('load-context.runtime loads info, profile definitions, and parsed session s
         agentResponse: 'We provide API integrations for product teams.',
         profiles: ['Developer.md'],
         profileDetails: ['Asked about API integrations'],
-        dataDir: sandbox.dataDir,
     });
 
     const result = await loadContext({
         sessionId: 'sess1',
-        dataDir: sandbox.dataDir,
     });
 
     assert.equal(result.siteInfo.length, 2);
@@ -34,7 +34,6 @@ test('load-context.runtime loads info, profile definitions, and parsed session s
 
     const missingSessionResult = await loadContext({
         sessionId: 'new-session',
-        dataDir: sandbox.dataDir,
     });
     assert.equal(missingSessionResult.currentSessionState.isNewSession, true);
     assert.match(

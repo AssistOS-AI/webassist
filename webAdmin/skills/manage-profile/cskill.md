@@ -23,4 +23,5 @@ Creates or updates a profiling template in `data/profilesInfo/` for the webCli a
 ## Constraints
 - Rejects invalid or unsafe profile names.
 - Matches existing profiles case-insensitively and updates them in place.
+- Persists profile content using numbered markdown sections (`### 1. Characteristics`, `### 2. Interests`, `### 3. Qualifying criteria`).
 - Does not call the LLM.

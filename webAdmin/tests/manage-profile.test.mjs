@@ -5,10 +5,12 @@ import path from 'node:path';
 
 import { createWebAdminSandbox } from './helpers.mjs';
 import { action } from '../skills/manage-profile/src/index.mjs';
+import { configureDataStore } from '../src/runtime/dataStore.mjs';
 
 test('manage-profile creates or updates profiles case-insensitively', async (t) => {
     const sandbox = await createWebAdminSandbox();
     t.after(async () => sandbox.cleanup());
+    configureDataStore({ agentRoot: sandbox.agentRoot, dataDir: sandbox.dataDir });
 
     const result = await action({
         promptText: JSON.stringify({
@@ -17,7 +19,6 @@ test('manage-profile creates or updates profiles case-insensitively', async (t) 
             interests: ['Integrations', 'Automation'],
             qualifyingCriteria: ['Owns technical roadmap', 'Has implementation budget'],
         }),
-        dataDir: sandbox.dataDir,
     });
 
     assert.equal(result.success, true);
@@ -27,11 +28,11 @@ test('manage-profile creates or updates profiles case-insensitively', async (t) 
 
     const profilePath = path.join(sandbox.dataDir, 'profilesInfo', 'Developer.md');
     const content = await fs.readFile(profilePath, 'utf8');
-    assert.match(content, /## Characteristics/);
+    assert.match(content, /### 1\. Characteristics/);
     assert.match(content, /- API-focused/);
-    assert.match(content, /## Interests/);
+    assert.match(content, /### 2\. Interests/);
     assert.match(content, /- Integrations/);
-    assert.match(content, /## Qualifying criteria/);
+    assert.match(content, /### 3\. Qualifying criteria/);
     assert.match(content, /- Has implementation budget/);
 
     const updated = await action({
@@ -41,7 +42,6 @@ test('manage-profile creates or updates profiles case-insensitively', async (t) 
             interests: ['Case-insensitive update'],
             qualifyingCriteria: ['Updated criteria'],
         }),
-        dataDir: sandbox.dataDir,
     });
 
     assert.equal(updated.success, true);

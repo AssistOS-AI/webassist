@@ -2,8 +2,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { RecursiveSkilledAgent } from 'achillesAgentLib';
-import { resolveDataDir } from '../../webassist-shared/dataStore.mjs';
 import { loadContext } from './runtime/load-context.mjs';
+import { configureDataStore, getConfiguredDataDir } from './runtime/dataStore.mjs';
 import { updateSession } from './runtime/update-session.mjs';
 
 function getDefaultAgentRoot() {
@@ -111,7 +111,11 @@ export async function createWebCliAgent({
     recursiveAgentOptions = {},
 } = {}) {
     const resolvedAgentRoot = path.resolve(agentRoot);
-    const resolvedDataDir = resolveDataDir(resolvedAgentRoot, dataDir);
+    configureDataStore({
+        agentRoot: resolvedAgentRoot,
+        dataDir,
+    });
+    const resolvedDataDir = getConfiguredDataDir();
 
     const recursiveAgent = new RecursiveSkilledAgent(buildBaseAgentOptions({
         agentRoot: resolvedAgentRoot,
@@ -139,7 +143,6 @@ export async function createWebCliAgent({
 
             const context = await loadContext({
                 sessionId,
-                dataDir: resolvedDataDir,
             });
 
             const execution = await recursiveAgent.executePrompt(buildOrchestrationPrompt({
@@ -167,7 +170,6 @@ export async function createWebCliAgent({
                 agentResponse: normalized.agentResponseEnglish,
                 profiles: normalized.profiles,
                 profileDetails: normalized.profileDetails,
-                dataDir: resolvedDataDir,
             });
 
             return {

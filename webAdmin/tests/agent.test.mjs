@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 import { createWebAdminSandbox } from './helpers.mjs';
 import { createWebAdminAgent } from '../src/WebAdminAgent.mjs';
@@ -115,6 +116,8 @@ test('webAdmin agent loads achillesAgentLib and executes owner requests', async 
 
     const sandbox = await createWebAdminSandbox();
     t.after(async () => sandbox.cleanup());
+    const sandboxDataStoreModule = await import(pathToFileURL(path.join(sandbox.agentRoot, 'src', 'runtime', 'dataStore.mjs')).href);
+    sandboxDataStoreModule.configureDataStore({ agentRoot: sandbox.agentRoot, dataDir: sandbox.dataDir });
 
     const llmAgent = createFakeWebAdminLLM(LLMAgent);
     const agent = await createWebAdminAgent({

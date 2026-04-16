@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-
-import { ensureDirectory } from '../../../../webassist-shared/dataStore.mjs';
+import { getConfiguredDataDir, getDataStore } from '../../../src/runtime/dataStore.mjs';
+import { DATASTORE_TYPES } from '../../../src/constants/datastore.mjs';
 
 function parseInput(promptText) {
     let parsed;
@@ -54,27 +54,27 @@ async function fileExists(filePath) {
     }
 }
 
-async function writeInfoFile(infoDir, fileName, content) {
-    const fullName = `${fileName}.md`;
-    const filePath = path.join(infoDir, fullName);
+async function writeInfoFile(store, dataDir, fileName, content) {
+    const filePath = path.join(dataDir, DATASTORE_TYPES.INFO, `${fileName}.md`);
     const exists = await fileExists(filePath);
-    await fs.writeFile(filePath, `${content}\n`, 'utf8');
-    return { fileName: fullName, created: !exists, updated: exists };
+    await store.replaceFile(DATASTORE_TYPES.INFO, fileName, { Content: String(content ?? '') });
+    return { fileName: `${fileName}.md`, created: !exists, updated: exists };
 }
 
-async function readInfoFile(infoDir, fileName) {
+async function readInfoFile(store, fileName) {
     const fullName = `${fileName}.md`;
-    const filePath = path.join(infoDir, fullName);
-    const content = await fs.readFile(filePath, 'utf8');
+    const file = await store.getFile(DATASTORE_TYPES.INFO, fileName);
+    const rendered = file.sections.map((section) => String(section.content ?? '').trim() || '*None*').join('\n\n').trim();
     return {
         fileName: fullName,
-        content,
+        content: rendered,
     };
 }
 
-export async function action({ promptText, dataDir = './data' }) {
+export async function action({ promptText }) {
     const payload = parseInput(promptText);
-    const infoDir = path.join(dataDir, 'info');
+    const store = getDataStore();
+    const dataDir = getConfiguredDataDir();
     const created = [];
     const updated = [];
 
@@ -85,7 +85,7 @@ export async function action({ promptText, dataDir = './data' }) {
             return { success: false, error: 'fileName is required for read operations.' };
         }
         try {
-            const result = await readInfoFile(infoDir, name);
+            const result = await readInfoFile(store, name);
             return {
                 success: true,
                 content: `# ${result.fileName}\n\n${result.content.trim()}`,
@@ -100,13 +100,12 @@ export async function action({ promptText, dataDir = './data' }) {
 
     const files = Array.isArray(payload.files) ? payload.files : null;
     if (files && files.length > 0) {
-        await ensureDirectory(infoDir);
         let index = 1;
         for (const entry of files) {
             const fileName = sanitizeName(entry?.name)
                 || deriveNameFromContent(entry?.promptText || entry?.content, index);
             const content = typeof entry?.content === 'string' ? entry.content : '';
-            const result = await writeInfoFile(infoDir, fileName, content);
+            const result = await writeInfoFile(store, dataDir, fileName, content);
             if (result.created) {
                 created.push(result.fileName);
             } else {
@@ -123,8 +122,7 @@ export async function action({ promptText, dataDir = './data' }) {
         if (!fileName) {
             return { success: false, error: 'fileName is required.' };
         }
-        await ensureDirectory(infoDir);
-        const result = await writeInfoFile(infoDir, fileName, payload.content);
+        const result = await writeInfoFile(store, dataDir, fileName, payload.content);
         if (result.created) {
             created.push(result.fileName);
         } else {

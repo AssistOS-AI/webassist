@@ -2,7 +2,12 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { RecursiveSkilledAgent } from "achillesAgentLib";
-import { readMarkdownDirectory, resolveDataDir } from '../../webassist-shared/dataStore.mjs';
+import {
+    configureDataStore,
+    getConfiguredDataDir,
+    getDataStore,
+} from './runtime/dataStore.mjs';
+import { DATASTORE_TYPES } from './constants/datastore.mjs';
 
 function getDefaultAgentRoot() {
     return path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -51,9 +56,10 @@ function normalizeRuntimeResult(executionResult) {
     };
 }
 
-async function listLeadIds(dataDir) {
-    const leadFiles = await readMarkdownDirectory(path.join(dataDir, 'leads'));
-    return leadFiles.map((file) => file.fileName);
+async function listLeadIds() {
+    const store = getDataStore();
+    const leadFiles = await store.listFiles(DATASTORE_TYPES.LEADS);
+    return leadFiles.files.map((fileName) => `${fileName}.md`);
 }
 
 export async function createWebAdminAgent({
@@ -65,7 +71,11 @@ export async function createWebAdminAgent({
     recursiveAgentOptions = {},
 } = {}) {
     const resolvedAgentRoot = path.resolve(agentRoot);
-    const resolvedDataDir = resolveDataDir(resolvedAgentRoot, dataDir);
+    configureDataStore({
+        agentRoot: resolvedAgentRoot,
+        dataDir,
+    });
+    const resolvedDataDir = getConfiguredDataDir();
 
     const recursiveAgent = new RecursiveSkilledAgent(buildBaseAgentOptions({
         agentRoot: resolvedAgentRoot,
@@ -88,7 +98,7 @@ export async function createWebAdminAgent({
                 throw new Error('webAdmin.handleMessage requires a message.');
             }
 
-            const availableLeadIds = await listLeadIds(resolvedDataDir);
+            const availableLeadIds = await listLeadIds();
             const execution = await recursiveAgent.executePrompt(buildOrchestrationPrompt({
                 message,
                 availableLeadIds,

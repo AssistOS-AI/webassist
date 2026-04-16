@@ -1,9 +1,13 @@
-import path from 'node:path';
-
 import {
-    combineMarkdownFiles,
-    readMarkdownDirectory,
-} from '../../../../webassist-shared/dataStore.mjs';
+    getDataStore,
+} from '../../../src/runtime/dataStore.mjs';
+import { DATASTORE_TYPES } from '../../../src/constants/datastore.mjs';
+
+function combineMarkdownFiles(files, label) {
+    return files
+        .map(({ fileName, content }) => `--- [${label}: ${fileName}] ---\n${String(content ?? '').trim()}`)
+        .join('\n\n');
+}
 
 function parseInput(promptText) {
     let parsed;
@@ -19,14 +23,21 @@ function parseInput(promptText) {
     return parsed;
 }
 
-export async function action({ promptText, dataDir = './data' }) {
+export async function action({ promptText }) {
     const { sessionId } = parseInput(promptText);
 
     if (!sessionId) {
         throw new Error('bookMeeting requires a sessionId.');
     }
 
-    const configFiles = await readMarkdownDirectory(path.join(dataDir, 'config'));
+    const store = getDataStore();
+    const listing = await store.listFiles(DATASTORE_TYPES.CONFIG);
+    const configFiles = await Promise.all(
+        listing.files.map(async (itemName) => {
+            const file = await store.getFile(DATASTORE_TYPES.CONFIG, itemName);
+            return { fileName: `${itemName}.md`, content: file.rawMarkdown };
+        })
+    );
     if (configFiles.length === 0) {
         throw new Error('No configuration found to book a meeting.');
     }

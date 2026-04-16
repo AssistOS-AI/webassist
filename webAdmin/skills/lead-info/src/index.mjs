@@ -1,11 +1,15 @@
-import path from 'node:path';
-
 import {
-    extractSessionIdFromLeadId,
-    normalizeLeadId,
-    readLeadFile,
-    readSessionFile,
-} from '../../../../webassist-shared/dataStore.mjs';
+    getDataStore,
+} from '../../../src/runtime/dataStore.mjs';
+import { DATASTORE_TYPES, LEAD_FIELDS, LEAD_SECTIONS, SESSION_SECTIONS } from '../../../src/constants/datastore.mjs';
+
+function normalizeLeadId(leadId) {
+    const normalized = String(leadId ?? '').trim();
+    if (!normalized) {
+        throw new Error('leadId is required.');
+    }
+    return normalized.endsWith('.md') ? normalized.slice(0, -3) : normalized;
+}
 
 function parseInput(promptText) {
     let parsed;
@@ -21,37 +25,68 @@ function parseInput(promptText) {
     return parsed;
 }
 
-export async function action({ promptText, dataDir = './data' }) {
+export async function action({ promptText }) {
     const { leadId } = parseInput(promptText);
 
     if (!leadId) {
         return { success: false, error: 'leadId is required.' };
     }
 
+    const store = getDataStore();
     const normalizedLeadId = normalizeLeadId(leadId);
 
     try {
-        const leadPath = path.join(dataDir, 'leads', normalizedLeadId);
-        const leadRecord = await readLeadFile(leadPath);
-        const sessionId = extractSessionIdFromLeadId(normalizedLeadId, leadRecord.parsed);
+        const leadRecord = await store.getSectionMap(DATASTORE_TYPES.LEADS, normalizedLeadId);
+        const leadInfo = store.parseKeyValue(leadRecord.sections[LEAD_SECTIONS.LEAD_INFO]);
+        const sessionId = String(leadInfo[LEAD_FIELDS.SESSION_ID] ?? '').trim()
+            || (normalizeLeadId(normalizedLeadId).match(/^(.*)-lead(?:-[^.]+)?$/)?.[1] ?? null);
 
         if (!sessionId) {
             return { success: false, error: `Could not determine the session for ${normalizedLeadId}.` };
         }
 
-        const sessionPath = path.join(dataDir, 'sessions', `${sessionId}.md`);
-        const sessionRecord = await readSessionFile(sessionPath);
+        let sessionRecord;
+        try {
+            sessionRecord = await store.getSectionMap(DATASTORE_TYPES.SESSIONS, sessionId);
+        } catch (error) {
+            if (error && error.code === 'ENOENT') {
+                sessionRecord = null;
+            } else {
+                throw error;
+            }
+        }
+
+        const leadData = {
+            status: leadInfo[LEAD_FIELDS.STATUS] ?? null,
+            profile: leadInfo[LEAD_FIELDS.PROFILE] ?? null,
+            sessionId: leadInfo[LEAD_FIELDS.SESSION_ID] ?? null,
+            createdAt: leadInfo[LEAD_FIELDS.CREATED_AT] ?? null,
+            updatedAt: leadInfo[LEAD_FIELDS.UPDATED_AT] ?? null,
+            contactInfo: store.parseKeyValue(leadRecord.sections[LEAD_SECTIONS.CONTACT_INFO]),
+            summary: String(leadRecord.sections[LEAD_SECTIONS.SUMMARY] ?? '').trim(),
+            rawContent: leadRecord.rawMarkdown,
+        };
 
         return {
             success: true,
             info: {
                 leadId: normalizedLeadId,
                 sessionId,
-                leadData: leadRecord.parsed,
-                leadMarkdown: leadRecord.content,
-                sessionHistory: sessionRecord.parsed,
-                sessionMarkdown: sessionRecord.exists ? sessionRecord.content : null,
-                sessionFound: sessionRecord.exists,
+                leadData,
+                leadMarkdown: leadRecord.rawMarkdown,
+                sessionHistory: sessionRecord
+                    ? {
+                        profiles: store.parseList(sessionRecord.sections[SESSION_SECTIONS.PROFILE]),
+                        profileDetails: store.parseList(sessionRecord.sections[SESSION_SECTIONS.PROFILE_DETAILS]),
+                        history: store.parseDialogue(sessionRecord.sections[SESSION_SECTIONS.HISTORY]).map((entry) => ({
+                            role: entry.speaker.toLowerCase(),
+                            message: entry.message,
+                        })),
+                        rawContent: sessionRecord.rawMarkdown,
+                    }
+                    : { profiles: [], profileDetails: [], history: [], rawContent: '' },
+                sessionMarkdown: sessionRecord ? sessionRecord.rawMarkdown : null,
+                sessionFound: Boolean(sessionRecord),
             },
         };
 

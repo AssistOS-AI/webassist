@@ -1,10 +1,23 @@
-import path from 'node:path';
-
 import {
-    getLeadTimestamp,
-    listLeadRecords,
-    toIsoTimestamp,
-} from '../../../../webassist-shared/dataStore.mjs';
+    getDataStore,
+} from '../../../src/runtime/dataStore.mjs';
+import { DATASTORE_TYPES, LEAD_FIELDS, LEAD_SECTIONS } from '../../../src/constants/datastore.mjs';
+
+function toIsoTimestamp(value = new Date()) {
+    const date = value instanceof Date ? value : new Date(value);
+    if (Number.isNaN(date.getTime())) {
+        throw new Error('Cannot convert invalid date to ISO timestamp.');
+    }
+    return date.toISOString();
+}
+
+function parseTimestamp(value) {
+    if (!value) {
+        return null;
+    }
+    const timestamp = Date.parse(value);
+    return Number.isNaN(timestamp) ? null : timestamp;
+}
 
 function parseInput(promptText) {
     let parsed;
@@ -20,24 +33,40 @@ function parseInput(promptText) {
     return parsed;
 }
 
-export async function action({ promptText, dataDir = './data' }) {
+export async function action({ promptText }) {
     const { limit = 5 } = parseInput(promptText);
 
-    const leadsDir = path.join(dataDir, 'leads');
+    const store = getDataStore();
     const normalizedLimit = Number.isInteger(limit) && limit > 0 ? limit : 5;
-    const leadRecords = await listLeadRecords(leadsDir);
+    const listing = await store.listFiles(DATASTORE_TYPES.LEADS);
+    const leadRecords = await Promise.all(
+        listing.files.map(async (itemName) => {
+            const lead = await store.getSectionMap(DATASTORE_TYPES.LEADS, itemName);
+            const leadInfo = store.parseKeyValue(lead.sections[LEAD_SECTIONS.LEAD_INFO]);
+            const stats = await store.getFileStats(DATASTORE_TYPES.LEADS, itemName);
+            const createdAt = String(leadInfo[LEAD_FIELDS.CREATED_AT] ?? '').trim();
+            const timestamp = parseTimestamp(createdAt)
+                ?? (stats.stats.birthtimeMs && stats.stats.birthtimeMs > 0 ? stats.stats.birthtimeMs : stats.stats.mtimeMs);
+            return {
+                fileName: `${itemName}.md`,
+                leadInfo,
+                summary: String(lead.sections[LEAD_SECTIONS.SUMMARY] ?? '').trim(),
+                timestamp,
+            };
+        })
+    );
 
     if (leadRecords.length === 0) {
         return { success: true, leads: [] };
     }
 
-    leadRecords.sort((left, right) => getLeadTimestamp(right) - getLeadTimestamp(left));
+    leadRecords.sort((left, right) => right.timestamp - left.timestamp);
     const recentLeads = leadRecords.slice(0, normalizedLimit).map((leadRecord) => ({
         leadId: leadRecord.fileName,
-        status: leadRecord.parsed.status || 'unknown',
-        profile: leadRecord.parsed.profile || 'unknown',
-        summary: leadRecord.parsed.summary || '',
-        createdAt: leadRecord.parsed.createdAt || toIsoTimestamp(new Date(getLeadTimestamp(leadRecord))),
+        status: String(leadRecord.leadInfo[LEAD_FIELDS.STATUS] ?? '').trim() || 'unknown',
+        profile: String(leadRecord.leadInfo[LEAD_FIELDS.PROFILE] ?? '').trim() || 'unknown',
+        summary: leadRecord.summary || '',
+        createdAt: String(leadRecord.leadInfo[LEAD_FIELDS.CREATED_AT] ?? '').trim() || toIsoTimestamp(new Date(leadRecord.timestamp)),
     }));
 
     return { success: true, leads: recentLeads };

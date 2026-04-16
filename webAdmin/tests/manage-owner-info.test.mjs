@@ -5,10 +5,12 @@ import path from 'node:path';
 
 import { createWebAdminSandbox } from './helpers.mjs';
 import { action } from '../skills/manage-owner-info/src/index.mjs';
+import { configureDataStore } from '../src/runtime/dataStore.mjs';
 
 test('manage-owner-info updates standard contact lines', async (t) => {
     const sandbox = await createWebAdminSandbox();
     t.after(async () => sandbox.cleanup());
+    configureDataStore({ agentRoot: sandbox.agentRoot, dataDir: sandbox.dataDir });
 
     const configDir = path.join(sandbox.dataDir, 'config');
     await fs.mkdir(configDir, { recursive: true });
@@ -23,7 +25,6 @@ test('manage-owner-info updates standard contact lines', async (t) => {
             email: 'new@example.com',
             meeting: 'https://cal.example.com/meet',
         }),
-        dataDir: sandbox.dataDir,
     });
 
     assert.equal(updateResult.success, true);

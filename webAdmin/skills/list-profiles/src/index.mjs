@@ -1,7 +1,5 @@
-import fs from 'node:fs/promises';
-import path from 'node:path';
-
-import { readMarkdownDirectory } from '../../../../webassist-shared/dataStore.mjs';
+import { getDataStore } from '../../../src/runtime/dataStore.mjs';
+import { DATASTORE_TYPES, PROFILE_SECTIONS } from '../../../src/constants/datastore.mjs';
 
 function parseInput(promptText) {
     if (promptText === undefined || promptText === null || String(promptText).trim() === '') {
@@ -19,16 +17,6 @@ function parseInput(promptText) {
     }
     return parsed;
 }
-
-function stripExtension(fileName) {
-    return fileName.endsWith('.md') ? fileName.slice(0, -3) : fileName;
-}
-
-const SECTION_HEADINGS = {
-    characteristics: '## Characteristics',
-    interests: '## Interests',
-    qualifyingCriteria: '## Qualifying criteria',
-};
 
 function normalizeSectionLabels(sections) {
     if (!sections) {
@@ -56,7 +44,7 @@ function normalizeSectionLabels(sections) {
     return { ok: true, labels };
 }
 
-function resolveSectionKeys(sectionLabels) {
+function resolveSectionNames(sectionLabels) {
     if (!sectionLabels) {
         return null;
     }
@@ -67,88 +55,59 @@ function resolveSectionKeys(sectionLabels) {
     for (const label of sectionLabels) {
         const normalized = label.toLowerCase();
         if (normalized.includes('character')) {
-            resolved.add('characteristics');
+            resolved.add(PROFILE_SECTIONS.CHARACTERISTICS);
             continue;
         }
         if (normalized.includes('interest')) {
-            resolved.add('interests');
+            resolved.add(PROFILE_SECTIONS.INTERESTS);
             continue;
         }
         if (normalized.includes('criteria') || normalized.includes('qualify')) {
-            resolved.add('qualifyingCriteria');
+            resolved.add(PROFILE_SECTIONS.QUALIFYING_CRITERIA);
             continue;
         }
         unknown.push(label);
     }
 
     if (resolved.size === 0 && unknown.length > 0) {
-        return Object.keys(SECTION_HEADINGS);
+        return [
+            PROFILE_SECTIONS.CHARACTERISTICS,
+            PROFILE_SECTIONS.INTERESTS,
+            PROFILE_SECTIONS.QUALIFYING_CRITERIA,
+        ];
     }
 
     return Array.from(resolved);
 }
 
-function extractSection(content, heading) {
-    const sectionPattern = new RegExp(
-        `${heading}\\n([\\s\\S]*?)(?=\\n## |$)`,
-        'i'
-    );
-    const match = content.match(sectionPattern);
-    return match ? match[1].trim() : '';
+function stripExtension(fileName) {
+    return fileName.endsWith('.md') ? fileName.slice(0, -3) : fileName;
 }
 
-function buildSectionOutput(content, sectionKeys) {
-    const keys = sectionKeys ?? Object.keys(SECTION_HEADINGS);
-    const sections = [];
-
-    for (const key of keys) {
-        const heading = SECTION_HEADINGS[key];
-        if (!heading) {
-            continue;
-        }
-        const sectionContent = extractSection(content, heading);
-        sections.push({
-            key,
-            heading,
-            content: sectionContent || '*None*',
-        });
-    }
-
-    const rendered = sections
-        .map((section) => `${section.heading}\n${section.content}`)
+function renderSections(sections) {
+    return sections
+        .map((section) => `## ${section.name}\n${String(section.content ?? '').trim() || '*None*'}`)
         .join('\n\n')
         .trim();
-
-    return {
-        rendered,
-        displayed: sections.map((section) => section.heading.replace(/^##\s*/, '').trim()),
-    };
 }
 
-async function findProfileByName(profilesDir, profileName) {
-    const entries = await fs.readdir(profilesDir, { withFileTypes: true });
-    const target = profileName.toLowerCase();
-
-    for (const entry of entries) {
-        if (!entry.isFile() || !entry.name.endsWith('.md')) {
-            continue;
-        }
-        if (entry.name.toLowerCase() === `${target}.md` || entry.name.toLowerCase() === target) {
-            return entry.name;
-        }
+async function findProfileByName(store, profileName) {
+    const listing = await store.listFiles(DATASTORE_TYPES.PROFILES_INFO);
+    const target = String(profileName ?? '').trim().toLowerCase().replace(/\.md$/, '');
+    if (!target) {
+        return null;
     }
-
-    return null;
+    return listing.files.find((name) => name.toLowerCase() === target) ?? null;
 }
 
-export async function action({ promptText, dataDir = './data' }) {
+export async function action({ promptText }) {
     const { profileName, sections } = parseInput(promptText);
+    const store = getDataStore();
 
-    const profilesDir = path.join(dataDir, 'profilesInfo');
     if (profileName) {
         let existingFile;
         try {
-            existingFile = await findProfileByName(profilesDir, String(profileName).trim());
+            existingFile = await findProfileByName(store, profileName);
         } catch (error) {
             if (error && error.code === 'ENOENT') {
                 return { success: true, profiles: [] };
@@ -160,37 +119,34 @@ export async function action({ promptText, dataDir = './data' }) {
             return { success: false, error: `Profile not found: ${profileName}` };
         }
 
-        const profilePath = path.join(profilesDir, existingFile);
-        const content = await fs.readFile(profilePath, 'utf8');
         const normalizedSections = normalizeSectionLabels(sections);
         if (!normalizedSections.ok) {
             return { success: false, error: normalizedSections.error };
         }
 
         if (!normalizedSections.labels) {
+            const full = await store.getFile(DATASTORE_TYPES.PROFILES_INFO, existingFile);
             return {
                 success: true,
-                profileName: stripExtension(existingFile),
-                content: content.trim(),
-                sectionsDisplayed: Object.values(SECTION_HEADINGS)
-                    .map((heading) => heading.replace(/^##\s*/, '').trim()),
+                profileName: stripExtension(`${existingFile}.md`),
+                content: renderSections(full.sections),
+                sectionsDisplayed: full.sections.map((section) => section.name),
             };
         }
 
-        const sectionKeys = resolveSectionKeys(normalizedSections.labels);
-        const { rendered, displayed } = buildSectionOutput(content, sectionKeys);
-
+        const sectionNames = resolveSectionNames(normalizedSections.labels);
+        const filtered = await store.getFile(DATASTORE_TYPES.PROFILES_INFO, existingFile, sectionNames);
         return {
             success: true,
-            profileName: stripExtension(existingFile),
-            content: rendered,
-            sectionsDisplayed: displayed,
+            profileName: stripExtension(`${existingFile}.md`),
+            content: renderSections(filtered.sections),
+            sectionsDisplayed: filtered.sections.map((section) => section.name),
         };
     }
 
-    const profileFiles = await readMarkdownDirectory(profilesDir);
-    const profiles = profileFiles
-        .map((file) => stripExtension(file.fileName))
+    const listing = await store.listFiles(DATASTORE_TYPES.PROFILES_INFO);
+    const profiles = listing.files
+        .map((item) => stripExtension(`${item}.md`))
         .filter(Boolean)
         .sort((left, right) => left.localeCompare(right));
 

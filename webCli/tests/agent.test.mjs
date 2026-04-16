@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { LLMAgent } from 'achillesAgentLib';
 
 import { createWebCliAgent } from '../src/index.mjs';
@@ -78,6 +79,8 @@ class FakeWebCliLLM extends LLMAgent {
 test('webCli agent loads AchillesAgentLib and executes a full visitor turn', async (t) => {
     const sandbox = await createWebCliSandbox();
     t.after(async () => sandbox.cleanup());
+    const sandboxDataStoreModule = await import(pathToFileURL(path.join(sandbox.agentRoot, 'src', 'runtime', 'dataStore.mjs')).href);
+    sandboxDataStoreModule.configureDataStore({ agentRoot: sandbox.agentRoot, dataDir: sandbox.dataDir });
 
     const llmAgent = new FakeWebCliLLM();
     const agent = await createWebCliAgent({

@@ -31,11 +31,12 @@ When `profileName` **is** provided:
    - Sort the list alphabetically and return it.
 2. If `profileName` is provided:
    - Locate the profile file by case-insensitive match on filename.
-   - If `sections` is missing, return the full markdown.
+   - If `sections` is missing, return all numbered profile sections.
    - If `sections` is provided, resolve only the standard headings:
-     - `Characteristics`
-     - `Interests`
-     - `Qualifying criteria`
+      - `Characteristics`
+      - `Interests`
+      - `Qualifying criteria`
+   - Section resolution reads numbered markdown section names (`### N. Name`) from the datastore.
    - Unknown section labels are mapped by keywords (`character*`, `interest*`, `criteria/qualify*`).
    - If no keyword mapping matches, return all three sections.
-   - Always include the section title in the returned content and report `sectionsDisplayed`.
+   - Always include the section title in the returned content (`## Name`) and report `sectionsDisplayed`.

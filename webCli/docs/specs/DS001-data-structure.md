@@ -6,6 +6,8 @@ Runtime note:
 - By default, `data/` is resolved under `webassist-shared/data` at the repository/runtime root level.
 - `--data-dir` can override this location explicitly.
 - `--agent-root` changes the runtime root whose parent is used for default `webassist-shared/data` resolution.
+- Persistence is implemented through `MarkdownDataStore` from AchillesAgentLib.
+- Folder/section identifiers used by datastore calls are centralized in `webCli/src/constants/datastore.mjs`.
 
 ## Data Subfolders
 - **config/**: Contains `owner.md` or similar files with site owner contact details and calendar/meeting links.

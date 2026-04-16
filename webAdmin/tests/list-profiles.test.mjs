@@ -5,27 +5,28 @@ import path from 'node:path';
 
 import { createWebAdminSandbox } from './helpers.mjs';
 import { action } from '../skills/list-profiles/src/index.mjs';
+import { configureDataStore } from '../src/runtime/dataStore.mjs';
 
 test('list-profiles returns profile names without extensions', async (t) => {
     const sandbox = await createWebAdminSandbox();
     t.after(async () => sandbox.cleanup());
+    configureDataStore({ agentRoot: sandbox.agentRoot, dataDir: sandbox.dataDir });
 
     const profilesDir = path.join(sandbox.dataDir, 'profilesInfo');
     await fs.mkdir(profilesDir, { recursive: true });
     await fs.writeFile(
         path.join(profilesDir, 'Developer.md'),
-        '## Characteristics\n- API-focused\n\n## Interests\n- Integrations\n\n## Qualifying criteria\n- Has budget\n',
+        '### 1. Characteristics\n- API-focused\n\n### 2. Interests\n- Integrations\n\n### 3. Qualifying criteria\n- Has budget\n',
         'utf8'
     );
     await fs.writeFile(
         path.join(profilesDir, 'EnterpriseClient.md'),
-        '## Characteristics\n- Enterprise\n\n## Interests\n- Security\n\n## Qualifying criteria\n- Needs procurement\n',
+        '### 1. Characteristics\n- Enterprise\n\n### 2. Interests\n- Security\n\n### 3. Qualifying criteria\n- Needs procurement\n',
         'utf8'
     );
 
     const result = await action({
         promptText: JSON.stringify({}),
-        dataDir: sandbox.dataDir,
     });
 
     assert.equal(result.success, true);
@@ -35,15 +36,15 @@ test('list-profiles returns profile names without extensions', async (t) => {
 test('list-profiles returns full markdown for a profile', async (t) => {
     const sandbox = await createWebAdminSandbox();
     t.after(async () => sandbox.cleanup());
+    configureDataStore({ agentRoot: sandbox.agentRoot, dataDir: sandbox.dataDir });
 
     const profilesDir = path.join(sandbox.dataDir, 'profilesInfo');
     await fs.mkdir(profilesDir, { recursive: true });
-    const source = '## Characteristics\n- API-focused\n\n## Interests\n- Integrations\n\n## Qualifying criteria\n- Has budget\n';
+    const source = '### 1. Characteristics\n- API-focused\n\n### 2. Interests\n- Integrations\n\n### 3. Qualifying criteria\n- Has budget\n';
     await fs.writeFile(path.join(profilesDir, 'Developer.md'), source, 'utf8');
 
     const result = await action({
         promptText: JSON.stringify({ profileName: 'Developer' }),
-        dataDir: sandbox.dataDir,
     });
 
     assert.equal(result.success, true);
@@ -56,18 +57,18 @@ test('list-profiles returns full markdown for a profile', async (t) => {
 test('list-profiles returns requested sections and falls back on unknown', async (t) => {
     const sandbox = await createWebAdminSandbox();
     t.after(async () => sandbox.cleanup());
+    configureDataStore({ agentRoot: sandbox.agentRoot, dataDir: sandbox.dataDir });
 
     const profilesDir = path.join(sandbox.dataDir, 'profilesInfo');
     await fs.mkdir(profilesDir, { recursive: true });
     await fs.writeFile(
         path.join(profilesDir, 'Developer.md'),
-        '## Characteristics\n- API-focused\n\n## Interests\n- Integrations\n\n## Qualifying criteria\n- Has budget\n',
+        '### 1. Characteristics\n- API-focused\n\n### 2. Interests\n- Integrations\n\n### 3. Qualifying criteria\n- Has budget\n',
         'utf8'
     );
 
     const filtered = await action({
         promptText: JSON.stringify({ profileName: 'Developer', sections: ['Interests'] }),
-        dataDir: sandbox.dataDir,
     });
 
     assert.equal(filtered.success, true);
@@ -77,7 +78,6 @@ test('list-profiles returns requested sections and falls back on unknown', async
 
     const fallback = await action({
         promptText: JSON.stringify({ profileName: 'Developer', sections: ['Other'] }),
-        dataDir: sandbox.dataDir,
     });
 
     assert.equal(fallback.success, true);
