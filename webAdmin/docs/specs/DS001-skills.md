@@ -33,9 +33,6 @@ Skill runtime note:
 ## Skill: manage-profile
 - **Function**: Creates or updates a profiling template in `profilesInfo/` for the webCli agent to use when matching visitors.
 
-## Skill: list-profiles
-- **Function**: Lists profile templates or displays full/partial profile markdown content.
-
 ## Skill: manage-site-info
 - **Function**: Creates or updates one/many site information files under `data/info/`, and can display a specific file.
 
@@ -44,3 +41,4 @@ Skill runtime note:
 
 ## Skill: admin-flow
 - **Function**: Orchestrates owner requests by selecting and executing exactly one admin skill per turn.
+- **Context Preload**: Receives preloaded profiles list, owner info, and website info at every iteration.

@@ -3,9 +3,9 @@
 The `data/` folder is the persistent storage for the webCli agent. It is excluded from version control via `.gitignore`.
 
 Runtime note:
-- By default, `data/` is resolved under `webassist-shared/data` at the repository/runtime root level.
+- By default, `data/` is resolved at repository root (`<repo>/data`).
 - `--data-dir` can override this location explicitly.
-- `--agent-root` changes the runtime root whose parent is used for default `webassist-shared/data` resolution.
+- `--agent-root` changes the runtime root whose parent is used for default `<repo>/data` resolution.
 - Persistence is implemented through `MarkdownDataStore` from AchillesAgentLib.
 - Folder/section identifiers used by datastore calls are centralized in `webCli/src/constants/datastore.mjs`.
 
@@ -16,8 +16,10 @@ Runtime note:
 - **leads/**: Stores contact information and profiling data for valuable prospects identified during conversations.
 - **sessions/**: Stores the state of active and past interactions.
 
-## Session File Specification (sessionId.md)
-Each file in `sessions/` must follow this mandatory Markdown structure:
+## Session File Specification (split files)
+Each session uses two files in `sessions/`:
+- `{sessionId}-profile.md`
+- `{sessionId}-history.md`
 
 ### Session ID Lifecycle
 - `sessionId` can be provided explicitly by the caller.
@@ -25,15 +27,17 @@ Each file in `sessions/` must follow this mandatory Markdown structure:
 - In interactive CLI mode, the same generated/provided `sessionId` is reused for all turns until the process exits.
 - In MCP mode (`-mcp`), one request uses one `sessionId` and exits.
 
-### 1. Profile
+### Profile file (`{sessionId}-profile.md`)
+#### 1. Profile
 Contains a list of filenames from `profilesInfo/` that are currently considered relevant to this session. 
 - **Initialization**: Can start with multiple likely profiles.
 - **Evolution**: The list is updated/narrowed down as more information is gathered from the user.
 
-### 2. Profile Details
+#### 2. Profile Details
 A structured list or narrative of important facts the agent has learned about the user (e.g., industry, company size, specific pain points, budget).
 
-### 3. History
+### History file (`{sessionId}-history.md`)
+#### 1. History
 A chronological log of the interaction:
 - **User**: [Input text]
 - **Agent**: [Response text]

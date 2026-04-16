@@ -21,7 +21,7 @@ Load all visitor-turn context before orchestration starts, so the agentic loop r
 ## Execution Logic
 1. Read markdown files from `data/info/`.
 2. Read markdown files from `data/profilesInfo/`.
-3. Read and parse `data/sessions/{sessionId}.md` if it exists.
+3. Read and parse `data/sessions/{sessionId}-profile.md` and `data/sessions/{sessionId}-history.md` if they exist.
 4. Return both structured and combined-text context used by the orchestrator prompt.
 
 ## Datastore Source

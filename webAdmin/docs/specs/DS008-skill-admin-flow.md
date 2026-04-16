@@ -8,13 +8,14 @@ An **oskill** executed through `RecursiveSkilledAgent` on every owner turn.
 
 ## Tool Definition
 - **Name**: `admin-flow`
-- **Description**: Executes one of the admin skills (`news`, `statistics`, `lead-info`, `update-lead`, `manage-profile`, `list-profiles`, `manage-site-info`, `manage-owner-info`) based on the owner request.
+- **Description**: Executes one of the admin skills (`news`, `statistics`, `lead-info`, `update-lead`, `manage-profile`, `manage-site-info`, `manage-owner-info`) based on the owner request.
 - **Session Type**: Loop
 
 ## Inputs
 The runtime prompt includes:
 - The owner message.
 - The list of known lead IDs.
+- Preloaded profile list, owner info snapshot, and website info snapshot.
 
 ## Output
 - **Plain text** response string (no JSON). The response must be in the same language as the owner’s message.

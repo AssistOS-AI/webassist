@@ -1,7 +1,14 @@
 import {
     getDataStore,
 } from '../../../src/runtime/dataStore.mjs';
-import { DATASTORE_TYPES, LEAD_FIELDS, LEAD_SECTIONS, SESSION_SECTIONS } from '../../../src/constants/datastore.mjs';
+import {
+    DATASTORE_TYPES,
+    LEAD_FIELDS,
+    LEAD_SECTIONS,
+    SESSION_SECTIONS,
+    getSessionHistoryFileName,
+    getSessionProfileFileName,
+} from '../../../src/constants/datastore.mjs';
 
 function normalizeLeadId(leadId) {
     const normalized = String(leadId ?? '').trim();
@@ -46,11 +53,21 @@ export async function action({ promptText }) {
         }
 
         let sessionRecord;
+        let sessionHistoryRecord;
         try {
-            sessionRecord = await store.getSectionMap(DATASTORE_TYPES.SESSIONS, sessionId);
+            sessionRecord = await store.getSectionMap(DATASTORE_TYPES.SESSIONS, getSessionProfileFileName(sessionId));
         } catch (error) {
             if (error && error.code === 'ENOENT') {
                 sessionRecord = null;
+            } else {
+                throw error;
+            }
+        }
+        try {
+            sessionHistoryRecord = await store.getSectionMap(DATASTORE_TYPES.SESSIONS, getSessionHistoryFileName(sessionId));
+        } catch (error) {
+            if (error && error.code === 'ENOENT') {
+                sessionHistoryRecord = null;
             } else {
                 throw error;
             }
@@ -67,6 +84,12 @@ export async function action({ promptText }) {
             rawContent: leadRecord.rawMarkdown,
         };
 
+        const historyRaw = sessionHistoryRecord?.sections?.[SESSION_SECTIONS.HISTORY] ?? '*None*';
+        const sessionMarkdown = [
+            sessionRecord ? `--- [Session Profile: ${getSessionProfileFileName(sessionId)}.md] ---\n${sessionRecord.rawMarkdown}` : '',
+            sessionHistoryRecord ? `--- [Session History: ${getSessionHistoryFileName(sessionId)}.md] ---\n${sessionHistoryRecord.rawMarkdown}` : '',
+        ].filter(Boolean).join('\n\n');
+        const hasSessionData = Boolean(sessionRecord || sessionHistoryRecord);
         return {
             success: true,
             info: {
@@ -74,19 +97,19 @@ export async function action({ promptText }) {
                 sessionId,
                 leadData,
                 leadMarkdown: leadRecord.rawMarkdown,
-                sessionHistory: sessionRecord
+                sessionHistory: hasSessionData
                     ? {
-                        profiles: store.parseList(sessionRecord.sections[SESSION_SECTIONS.PROFILE]),
-                        profileDetails: store.parseList(sessionRecord.sections[SESSION_SECTIONS.PROFILE_DETAILS]),
-                        history: store.parseDialogue(sessionRecord.sections[SESSION_SECTIONS.HISTORY]).map((entry) => ({
+                        profiles: store.parseList(sessionRecord?.sections?.[SESSION_SECTIONS.PROFILE]),
+                        profileDetails: store.parseList(sessionRecord?.sections?.[SESSION_SECTIONS.PROFILE_DETAILS]),
+                        history: store.parseDialogue(historyRaw).map((entry) => ({
                             role: entry.speaker.toLowerCase(),
                             message: entry.message,
                         })),
-                        rawContent: sessionRecord.rawMarkdown,
+                        rawContent: sessionMarkdown,
                     }
                     : { profiles: [], profileDetails: [], history: [], rawContent: '' },
-                sessionMarkdown: sessionRecord ? sessionRecord.rawMarkdown : null,
-                sessionFound: Boolean(sessionRecord),
+                sessionMarkdown: sessionMarkdown || null,
+                sessionFound: hasSessionData,
             },
         };
 

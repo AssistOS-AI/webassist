@@ -5,6 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { getSessionHistoryFileName, getSessionProfileFileName } from '../src/constants/datastore.mjs';
 
 const TESTS_DIR = path.dirname(fileURLToPath(import.meta.url));
 const WEBCLI_ROOT = path.resolve(TESTS_DIR, '..');
@@ -48,12 +49,17 @@ async function assertDirectoryExists(targetPath) {
 }
 
 test('mcp mode supports required CLI variants', async (t) => {
-    const defaultDataDir = path.join(REPO_ROOT, 'webassist-shared', 'data');
+    const defaultDataDir = path.join(REPO_ROOT, 'data');
     const createdDefaultSessions = [];
 
     t.after(async () => {
         await Promise.all(
-            createdDefaultSessions.map((sessionId) => fs.rm(path.join(defaultDataDir, 'sessions', `${sessionId}.md`), {
+            createdDefaultSessions.map((sessionId) => fs.rm(path.join(defaultDataDir, 'sessions', `${getSessionProfileFileName(sessionId)}.md`), {
+                force: true,
+            }))
+        );
+        await Promise.all(
+            createdDefaultSessions.map((sessionId) => fs.rm(path.join(defaultDataDir, 'sessions', `${getSessionHistoryFileName(sessionId)}.md`), {
                 force: true,
             }))
         );
@@ -75,9 +81,11 @@ test('mcp mode supports required CLI variants', async (t) => {
         assert.equal(result.stdout.trim().startsWith('{'), false);
 
         await assertDirectoryExists(defaultDataDir);
-        const sessionPath = path.join(defaultDataDir, 'sessions', `${sessionId}.md`);
+        const sessionPath = path.join(defaultDataDir, 'sessions', `${getSessionHistoryFileName(sessionId)}.md`);
         const sessionContent = await fs.readFile(sessionPath, 'utf8');
-        assert.match(sessionContent, /### 3\. History/);
+        const profilePath = path.join(defaultDataDir, 'sessions', `${getSessionProfileFileName(sessionId)}.md`);
+        await fs.readFile(profilePath, 'utf8');
+        assert.match(sessionContent, /### 1\. History/);
         createdDefaultSessions.push(sessionId);
     });
 
@@ -90,9 +98,11 @@ test('mcp mode supports required CLI variants', async (t) => {
         assert.match(payload.sessionId, /^session-/);
 
         await assertDirectoryExists(defaultDataDir);
-        const sessionPath = path.join(defaultDataDir, 'sessions', `${payload.sessionId}.md`);
+        const sessionPath = path.join(defaultDataDir, 'sessions', `${getSessionHistoryFileName(payload.sessionId)}.md`);
         const sessionContent = await fs.readFile(sessionPath, 'utf8');
-        assert.match(sessionContent, /### 3\. History/);
+        const profilePath = path.join(defaultDataDir, 'sessions', `${getSessionProfileFileName(payload.sessionId)}.md`);
+        await fs.readFile(profilePath, 'utf8');
+        assert.match(sessionContent, /### 1\. History/);
         createdDefaultSessions.push(payload.sessionId);
     });
 
@@ -119,20 +129,22 @@ test('mcp mode supports required CLI variants', async (t) => {
         assert.equal(payload.sessionId, sessionId);
 
         await assertDirectoryExists(customDataDir);
-        const sessionPath = path.join(customDataDir, 'sessions', `${sessionId}.md`);
+        const sessionPath = path.join(customDataDir, 'sessions', `${getSessionHistoryFileName(sessionId)}.md`);
         const sessionContent = await fs.readFile(sessionPath, 'utf8');
-        assert.match(sessionContent, /### 3\. History/);
+        const profilePath = path.join(customDataDir, 'sessions', `${getSessionProfileFileName(sessionId)}.md`);
+        await fs.readFile(profilePath, 'utf8');
+        assert.match(sessionContent, /### 1\. History/);
     });
 
     await t.test('runs -mcp with --agent-root override', async (sub) => {
         const customRuntimeRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'webcli-agent-root-'));
         const customAgentRoot = path.join(customRuntimeRoot, 'agent-root');
         const customSkillsDir = path.join(customAgentRoot, 'skills');
-        const customSharedDir = path.join(customRuntimeRoot, 'webassist-shared');
+        const customDataDir = path.join(customRuntimeRoot, 'data');
 
         await fs.mkdir(customAgentRoot, { recursive: true });
         await fs.cp(path.join(WEBCLI_ROOT, 'skills'), customSkillsDir, { recursive: true });
-        await fs.cp(path.join(REPO_ROOT, 'webassist-shared'), customSharedDir, { recursive: true });
+        await fs.cp(path.join(REPO_ROOT, 'data'), customDataDir, { recursive: true });
 
         sub.after(async () => {
             await fs.rm(customRuntimeRoot, { recursive: true, force: true });
@@ -154,11 +166,13 @@ test('mcp mode supports required CLI variants', async (t) => {
         assert.equal(payload.success, true);
         assert.equal(payload.sessionId, sessionId);
 
-        const expectedDataDir = path.join(customRuntimeRoot, 'webassist-shared', 'data');
+        const expectedDataDir = path.join(customRuntimeRoot, 'data');
         await assertDirectoryExists(expectedDataDir);
-        const sessionPath = path.join(expectedDataDir, 'sessions', `${sessionId}.md`);
+        const sessionPath = path.join(expectedDataDir, 'sessions', `${getSessionHistoryFileName(sessionId)}.md`);
         const sessionContent = await fs.readFile(sessionPath, 'utf8');
-        assert.match(sessionContent, /### 3\. History/);
+        const profilePath = path.join(expectedDataDir, 'sessions', `${getSessionProfileFileName(sessionId)}.md`);
+        await fs.readFile(profilePath, 'utf8');
+        assert.match(sessionContent, /### 1\. History/);
     });
 
     await t.test('supports -- to separate options from message', async () => {
@@ -177,9 +191,11 @@ test('mcp mode supports required CLI variants', async (t) => {
         assert.equal(payload.success, true);
         assert.equal(payload.sessionId, sessionId);
 
-        const sessionPath = path.join(defaultDataDir, 'sessions', `${sessionId}.md`);
+        const sessionPath = path.join(defaultDataDir, 'sessions', `${getSessionHistoryFileName(sessionId)}.md`);
         const sessionContent = await fs.readFile(sessionPath, 'utf8');
-        assert.match(sessionContent, /### 3\. History/);
+        const profilePath = path.join(defaultDataDir, 'sessions', `${getSessionProfileFileName(sessionId)}.md`);
+        await fs.readFile(profilePath, 'utf8');
+        assert.match(sessionContent, /### 1\. History/);
         createdDefaultSessions.push(sessionId);
     });
 });

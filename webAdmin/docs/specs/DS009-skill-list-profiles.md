@@ -3,6 +3,10 @@
 ## Goal
 List available profiles, or return the full markdown/selected sections for a specific profile.
 
+## Status
+- Kept as an optional direct cskill.
+- Not used by `admin-flow` orchestration because profile inventory is preloaded in runtime context each turn.
+
 ## Mechanism
 A **cskill** executed through `RecursiveSkilledAgent` when the owner requests a list of profiles.
 

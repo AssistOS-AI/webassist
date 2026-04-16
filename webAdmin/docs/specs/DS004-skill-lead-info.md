@@ -15,10 +15,12 @@ A **cskill** executed through `RecursiveSkilledAgent` when the owner requests de
 ## Output
 A JSON object or stringified summary containing:
 - The contents of the lead file (`data/leads/{leadId}.md`).
-- The contents of the corresponding session file (`data/sessions/{sessionId}.md`).
+- The contents of the corresponding split session files:
+  - `data/sessions/{sessionId}-profile.md`
+  - `data/sessions/{sessionId}-history.md`
 
 ## Execution Logic (Node.js)
 1. Read `data/leads/{leadId}.md`. If not found, return an error.
 2. Extract the `sessionId` from the lead file name or contents.
-3. Read the corresponding `data/sessions/{sessionId}.md`.
+3. Read `data/sessions/{sessionId}-profile.md` and `data/sessions/{sessionId}-history.md` when available.
 4. Return the combined data to the LLM so it can answer the admin's query completely.

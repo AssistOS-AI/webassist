@@ -1,7 +1,7 @@
 import {
     getDataStore,
 } from '../../../src/runtime/dataStore.mjs';
-import { DATASTORE_TYPES, LEAD_FIELDS, LEAD_SECTIONS } from '../../../src/constants/datastore.mjs';
+import { DATASTORE_TYPES, LEAD_FIELDS, LEAD_SECTIONS, SESSION_FILE_SUFFIX } from '../../../src/constants/datastore.mjs';
 
 function parseTimestamp(value) {
     if (!value) {
@@ -66,10 +66,12 @@ export async function action({ promptText, referenceDate = new Date() }) {
     const { interval } = parseInput(promptText);
 
     const sessionListing = await store.listFiles(DATASTORE_TYPES.SESSIONS);
+    const sessionProfileFiles = sessionListing.files
+        .filter((fileName) => fileName.endsWith(`-${SESSION_FILE_SUFFIX.PROFILE}`));
     const window = getIntervalStart(interval, referenceDate);
 
     const sessionStats = await Promise.all(
-        sessionListing.files.map((itemName) => store.getFileStats(DATASTORE_TYPES.SESSIONS, itemName))
+        sessionProfileFiles.map((itemName) => store.getFileStats(DATASTORE_TYPES.SESSIONS, itemName))
     );
     const totalSessions = sessionStats.filter((entry) => isTimestampWithinWindow(entry.stats.mtimeMs, window)).length;
 

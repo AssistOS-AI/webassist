@@ -20,7 +20,7 @@ The **webAdmin** agent is implemented as a Node.js CLI tool for site owners. It 
 - `--session-id <id>` / `--session-id=<id>`: Reuse a specific session id for the interactive process.
 - `--data-dir <dir>` / `--data-dir=<dir>`: Override the runtime data directory used for `config/`, `info/`, `profilesInfo/`, `leads/`, and `sessions/`.
 - `--agent-root <dir>` / `--agent-root=<dir>`: Override the agent root used by runtime initialization.
-  - This changes where default `webassist-shared/data` is resolved when `--data-dir` is not provided.
+  - This changes where default `<repo>/data` is resolved when `--data-dir` is not provided.
   - This changes the runtime root used for agent initialization and runtime file paths.
 - `-h` / `--help`: Print CLI usage and exit.
 - `--`: Stop option parsing and treat all remaining arguments as positional message text.
@@ -52,8 +52,9 @@ The **webAdmin** agent is implemented as a Node.js CLI tool for site owners. It 
 - `admin-flow` returns a **plain text** owner-facing response string (no JSON).
 - The sessionId is forwarded to `RecursiveSkilledAgent` to isolate multi-user sessions in shared instances.
 - Runtime data access is centralized through `webAdmin/src/runtime/dataStore.mjs`.
-- The datastore is configured exactly once when `createWebAdminAgent(...)` is initialized (default `webassist-shared/data`, or CLI `--data-dir` override).
+- The datastore is configured exactly once when `createWebAdminAgent(...)` is initialized (default `<repo>/data`, or CLI `--data-dir` override).
 - Runtime modules and skills only consume the configured datastore instance and must not accept per-call datastore overrides.
+- Before each orchestration call, webAdmin preloads profiles list, owner info, and website info into runtime context.
 - Datastore folder names and section labels are centralized in `webAdmin/src/constants/datastore.mjs` and must be reused across runtime/skills (no hardcoded folder/section literals in business logic).
 - Markdown parsing/rendering and section normalization rules (including `*None*` fallback for empty section content) are handled by Achilles `MarkdownDataStore`, not by agent datastore modules.
 

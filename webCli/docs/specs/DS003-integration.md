@@ -33,7 +33,7 @@ The **webCli** agent is implemented as a Node.js CLI tool with a single `session
 - `--json`: Print JSON output from runtime instead of plain text response.
 - `--data-dir <dir>` / `--data-dir=<dir>`: Override the runtime data directory used for `config/`, `info/`, `profilesInfo/`, `leads/`, and `sessions/`.
 - `--agent-root <dir>` / `--agent-root=<dir>`: Override the agent root used by runtime initialization.
-  - This changes where default `webassist-shared/data` is resolved when `--data-dir` is not provided.
+  - This changes where default `<repo>/data` is resolved when `--data-dir` is not provided.
   - This changes the runtime root used for agent initialization and runtime file paths.
 - `-h` / `--help`: Print CLI usage and exit.
 - `--`: Stop option parsing and treat all remaining arguments as positional message text.
@@ -47,7 +47,9 @@ MCP input note:
 - **Session Handling**:
   - If `--session-id` is provided, it must be reused for all turns in that process.
   - If `--session-id` is missing, `web-cli` must generate one automatically and reuse it for the whole interactive session.
-- **Persistence**: Every turn must be written to `{resolvedDataDir}/sessions/{sessionId}.md`.
+- **Persistence**: Every turn updates two files:
+  - `{resolvedDataDir}/sessions/{sessionId}-profile.md`
+  - `{resolvedDataDir}/sessions/{sessionId}-history.md`
 - **Exit Controls**: The interactive loop must allow exiting by typing `exit` or by pressing `Ctrl+C`.
 - **Example**: `node webCli/src/index.mjs "Hello I'm interested in your API"`
 
@@ -85,7 +87,7 @@ MCP input note:
 - After orchestration returns, webCli runs runtime module `update-session` from `webCli/src/runtime/update-session.mjs`.
 - Session persistence is therefore explicit runtime behavior, not a cskill invocation.
 - Runtime data access is centralized through `webCli/src/runtime/dataStore.mjs`.
-- The datastore is configured exactly once when `createWebCliAgent(...)` is initialized (default `webassist-shared/data`, or CLI `--data-dir` override).
+- The datastore is configured exactly once when `createWebCliAgent(...)` is initialized (default `<repo>/data`, or CLI `--data-dir` override).
 - Runtime modules and skills only consume the configured datastore instance and must not accept per-call datastore overrides.
 - Datastore names and section labels are centralized in `webCli/src/constants/datastore.mjs` and must be reused across runtime/skills (no hardcoded folder/section literals in business logic).
 - Markdown parsing/rendering and section normalization rules (including `*None*` fallback for empty section content) are handled by Achilles `MarkdownDataStore`, not by agent datastore modules.

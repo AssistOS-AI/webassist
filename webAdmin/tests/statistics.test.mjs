@@ -14,13 +14,13 @@ test('statistics filters sessions and leads by the requested interval', async (t
 
     const referenceDate = new Date('2026-04-06T12:00:00.000Z');
     await fs.utimes(
-        path.join(sandbox.dataDir, 'sessions', 'dev-session.md'),
+        path.join(sandbox.dataDir, 'sessions', 'dev-session-profile.md'),
         referenceDate,
         referenceDate
     );
     const oldSessionDate = new Date('2025-10-01T12:00:00.000Z');
     await fs.utimes(
-        path.join(sandbox.dataDir, 'sessions', 'legacy-session.md'),
+        path.join(sandbox.dataDir, 'sessions', 'legacy-session-profile.md'),
         oldSessionDate,
         oldSessionDate
     );

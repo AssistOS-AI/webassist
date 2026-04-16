@@ -148,4 +148,8 @@ test('webAdmin agent loads achillesAgentLib and executes owner requests', async 
     assert.equal(statsResult.success, true);
     assert.match(statsResult.response, /Statisticile pe luna curenta/);
     assert.ok(llmAgent.calls.length >= 4);
+    const promptWithPreload = llmAgent.calls.find((call) => String(call?.prompt || '').includes('Known profile templates:'));
+    assert.ok(promptWithPreload);
+    assert.match(promptWithPreload.prompt, /Owner info snapshot:/);
+    assert.match(promptWithPreload.prompt, /Website info snapshot:/);
 });

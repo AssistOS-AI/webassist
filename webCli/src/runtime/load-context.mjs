@@ -1,7 +1,12 @@
 import {
     getDataStore,
 } from './dataStore.mjs';
-import { DATASTORE_TYPES, SESSION_SECTIONS } from '../constants/datastore.mjs';
+import {
+    DATASTORE_TYPES,
+    SESSION_SECTIONS,
+    getSessionHistoryFileName,
+    getSessionProfileFileName,
+} from '../constants/datastore.mjs';
 
 async function listMarkdownFiles(store, type) {
     const listing = await store.listFiles(type);
@@ -34,31 +39,47 @@ export async function loadContext({ sessionId }) {
     const store = getDataStore();
     const infoFiles = await listMarkdownFiles(store, DATASTORE_TYPES.INFO);
     const profileFiles = await listMarkdownFiles(store, DATASTORE_TYPES.PROFILES_INFO);
+    const sessionProfileFileName = getSessionProfileFileName(sessionId);
+    const sessionHistoryFileName = getSessionHistoryFileName(sessionId);
     let sessionRecord = null;
-    try {
-        const sectionMap = await store.getSectionMap(DATASTORE_TYPES.SESSIONS, sessionId);
+    const emptyRecord = { profiles: [], profileDetails: [], history: [] };
+    const readSectionMap = async (fileName) => {
+        try {
+            return await store.getSectionMap(DATASTORE_TYPES.SESSIONS, fileName);
+        } catch (error) {
+            if (error && error.code === 'ENOENT') {
+                return null;
+            }
+            throw error;
+        }
+    };
+    const profileRecord = await readSectionMap(sessionProfileFileName);
+    const historyRecord = await readSectionMap(sessionHistoryFileName);
+    const exists = Boolean(profileRecord || historyRecord);
+    if (!exists) {
+        sessionRecord = {
+            exists: false,
+            content: '',
+            parsed: emptyRecord,
+        };
+    } else {
+        const historySource = historyRecord?.sections?.[SESSION_SECTIONS.HISTORY] ?? '*None*';
+        const combined = [
+            profileRecord ? `--- [Session Profile: ${sessionProfileFileName}.md] ---\n${profileRecord.rawMarkdown.trim()}` : '',
+            historyRecord ? `--- [Session History: ${sessionHistoryFileName}.md] ---\n${historyRecord.rawMarkdown.trim()}` : '',
+        ].filter(Boolean).join('\n\n');
         sessionRecord = {
             exists: true,
-            content: sectionMap.rawMarkdown,
+            content: combined,
             parsed: {
-                profiles: store.parseList(sectionMap.sections[SESSION_SECTIONS.PROFILE]),
-                profileDetails: store.parseList(sectionMap.sections[SESSION_SECTIONS.PROFILE_DETAILS]),
-                history: store.parseDialogue(sectionMap.sections[SESSION_SECTIONS.HISTORY]).map((entry) => ({
+                profiles: store.parseList(profileRecord?.sections?.[SESSION_SECTIONS.PROFILE]),
+                profileDetails: store.parseList(profileRecord?.sections?.[SESSION_SECTIONS.PROFILE_DETAILS]),
+                history: store.parseDialogue(historySource).map((entry) => ({
                     role: entry.speaker.toLowerCase(),
                     message: entry.message,
                 })),
             },
         };
-    } catch (error) {
-        if (error && error.code === 'ENOENT') {
-            sessionRecord = {
-                exists: false,
-                content: '',
-                parsed: { profiles: [], profileDetails: [], history: [] },
-            };
-        } else {
-            throw error;
-        }
     }
 
     return {

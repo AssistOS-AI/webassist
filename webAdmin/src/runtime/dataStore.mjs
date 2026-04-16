@@ -8,7 +8,7 @@ let dataStoreInstance = null;
 export function resolveDataDir(agentRoot, explicitDataDir = null) {
     return explicitDataDir
         ? path.resolve(explicitDataDir)
-        : path.resolve(agentRoot, '..', 'webassist-shared', 'data');
+        : path.resolve(agentRoot, '..', 'data');
 }
 
 export function configureDataStore({ agentRoot, dataDir = null } = {}) {

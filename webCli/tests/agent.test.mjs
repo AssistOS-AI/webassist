@@ -6,6 +6,7 @@ import { pathToFileURL } from 'node:url';
 import { LLMAgent } from 'achillesAgentLib';
 
 import { createWebCliAgent } from '../src/index.mjs';
+import { getSessionHistoryFileName, getSessionProfileFileName } from '../src/constants/datastore.mjs';
 import { createWebCliSandbox } from './helpers.mjs';
 
 class FakeWebCliLLM extends LLMAgent {
@@ -110,11 +111,15 @@ test('webCli agent loads AchillesAgentLib and executes a full visitor turn', asy
     assert.match(leadContent, /- \*\*Profile\*\*: Developer/);
     assert.match(leadContent, /alice@example\.com/);
 
-    const sessionContent = await fs.readFile(
-        path.join(sandbox.dataDir, 'sessions', 'visitor-42.md'),
+    const sessionProfileContent = await fs.readFile(
+        path.join(sandbox.dataDir, 'sessions', `${getSessionProfileFileName('visitor-42')}.md`),
         'utf8'
     );
-    assert.match(sessionContent, /- Developer\.md/);
-    assert.match(sessionContent, /Hello, I want to integrate your API/);
-    assert.match(sessionContent, /Below you can find the scheduling link/);
+    const sessionHistoryContent = await fs.readFile(
+        path.join(sandbox.dataDir, 'sessions', `${getSessionHistoryFileName('visitor-42')}.md`),
+        'utf8'
+    );
+    assert.match(sessionProfileContent, /- Developer\.md/);
+    assert.match(sessionHistoryContent, /Hello, I want to integrate your API/);
+    assert.match(sessionHistoryContent, /Below you can find the scheduling link/);
 });

@@ -18,6 +18,19 @@ export const SESSION_SECTION_INDEX = {
     HISTORY: 3,
 };
 
+export const SESSION_FILE_SUFFIX = {
+    PROFILE: 'profile',
+    HISTORY: 'history',
+};
+
+export function getSessionProfileFileName(sessionId) {
+    return `${sessionId}-${SESSION_FILE_SUFFIX.PROFILE}`;
+}
+
+export function getSessionHistoryFileName(sessionId) {
+    return `${sessionId}-${SESSION_FILE_SUFFIX.HISTORY}`;
+}
+
 export const LEAD_SECTIONS = {
     LEAD_INFO: 'Lead Info',
     CONTACT_INFO: 'Contact Info',

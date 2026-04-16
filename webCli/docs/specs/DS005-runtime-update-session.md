@@ -17,14 +17,15 @@ Persist the current visitor turn after orchestration completes, so session state
 - **Output**:
   - `success` (boolean)
   - `sessionId` (string)
-  - `sessionPath` (string)
+  - `sessionProfilePath` (string)
+  - `sessionHistoryPath` (string)
   - `session` (object)
 
 ## Execution Logic
-1. Read existing `data/sessions/{sessionId}.md` if present.
+1. Read existing `data/sessions/{sessionId}-history.md` if present.
 2. Merge and de-duplicate `profiles` and `profileDetails`.
-3. Append current user/agent history entries.
-4. Render and write session markdown using DS001 structure.
+3. Write profile state to `data/sessions/{sessionId}-profile.md`.
+4. Append current user/agent history entries to `data/sessions/{sessionId}-history.md`.
 
 ## Datastore Source
 - `update-session` uses the datastore singleton configured at agent startup.

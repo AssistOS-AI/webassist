@@ -7,6 +7,7 @@ import {
     getConfiguredDataDir,
     getDataStore,
 } from './runtime/dataStore.mjs';
+import { loadContext } from './runtime/load-context.mjs';
 import { DATASTORE_TYPES } from './constants/datastore.mjs';
 
 function getDefaultAgentRoot() {
@@ -34,13 +35,19 @@ function buildBaseAgentOptions({ agentRoot, llmAgent, logger, sessionConfig, rec
     return baseOptions;
 }
 
-function buildOrchestrationPrompt({ message, availableLeadIds }) {
+function buildOrchestrationPrompt({ message, availableLeadIds, preloadedContext }) {
     return [
         'WebAdmin owner request.',
         'Owner message:',
         String(message),
         'Known lead IDs:',
         availableLeadIds.length > 0 ? availableLeadIds.join('\n') : 'No leads available yet.',
+        'Known profile templates:',
+        String(preloadedContext?.combinedProfiles ?? 'No profiles available.'),
+        'Owner info snapshot:',
+        String(preloadedContext?.combinedOwnerInfo ?? 'No owner info available.'),
+        'Website info snapshot:',
+        String(preloadedContext?.combinedSiteInfo ?? 'No site info available.'),
     ].join('\n');
 }
 
@@ -99,9 +106,11 @@ export async function createWebAdminAgent({
             }
 
             const availableLeadIds = await listLeadIds();
+            const preloadedContext = await loadContext();
             const execution = await recursiveAgent.executePrompt(buildOrchestrationPrompt({
                 message,
                 availableLeadIds,
+                preloadedContext,
             }), {
                 model: mode,
                 context: {
@@ -112,6 +121,7 @@ export async function createWebAdminAgent({
                         ...(sessionId ? { sessionId } : {}),
                         dataDir: resolvedDataDir,
                         availableLeadIds,
+                        preloadedContext,
                         referenceDate,
                     },
                 },
