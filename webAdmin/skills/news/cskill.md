@@ -1,7 +1,7 @@
 # news
 
 ## Description
-Returns newest leads first with compact summary data.
+Returns newest leads first with compact summary data. Typical triggers include `latest leads`, `recent leads`, `news`, `what is new`, `show newest leads`, `lead updates`, and `recent activity`.
 
 ## Input Format
 - `promptText` contains a JSON object with:

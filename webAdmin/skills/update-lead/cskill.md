@@ -1,7 +1,7 @@
 # update-lead
 
 ## Description
-Updates the lifecycle status of an existing lead.
+Updates the lifecycle status of an existing lead. Typical triggers include `update lead status`, `mark lead`, `set lead status`, `change lead status`, and status intents like `mark as contacted`, `mark as converted`, or `mark as invalid`.
 
 ## Input Format
 - `promptText` contains a JSON object with:

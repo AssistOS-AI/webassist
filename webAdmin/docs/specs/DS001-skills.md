@@ -31,7 +31,7 @@ Skill runtime note:
 - **Output**: Recent entries in `leads/` with a brief overview of their status and profile.
 
 ## Skill: manage-profile
-- **Function**: Creates or updates a profiling template in `profilesInfo/` for the webCli agent to use when matching visitors.
+- **Function**: Lists profiles, displays one profile, or creates/updates a profiling template in `profilesInfo/` for the webCli agent to use when matching visitors.
 
 ## Skill: manage-site-info
 - **Function**: Creates or updates one/many site information files under `data/info/`, and can display a specific file.

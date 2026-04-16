@@ -1,7 +1,7 @@
 # manage-owner-info
 
-## Summary
-Creates or updates `data/config/owner.md` with owner contact information.
+## Description
+Creates or updates `data/config/owner.md` with owner contact information. Typical triggers include read/show intents (`show owner info`, `display contact info`, `view owner details`), targeted field updates (`update email`, `change phone`, `set calendar`, `set meeting link`), and overwrite intents (`replace owner info`, `rewrite owner contact details`).
 
 ## Input Format
 - `promptText` contains a JSON object with:

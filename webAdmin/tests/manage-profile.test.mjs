@@ -54,3 +54,44 @@ test('manage-profile creates or updates profiles case-insensitively', async (t) 
     assert.match(updatedContent, /- Case-insensitive update/);
     assert.match(updatedContent, /- Updated criteria/);
 });
+
+test('manage-profile lists profiles and displays one profile with optional sections', async (t) => {
+    const sandbox = await createWebAdminSandbox();
+    t.after(async () => sandbox.cleanup());
+    configureDataStore({ agentRoot: sandbox.agentRoot, dataDir: sandbox.dataDir });
+
+    const profilesDir = path.join(sandbox.dataDir, 'profilesInfo');
+    await fs.mkdir(profilesDir, { recursive: true });
+    await fs.writeFile(
+        path.join(profilesDir, 'Developer.md'),
+        '### 1. Characteristics\n- API-focused\n\n### 2. Interests\n- Integrations\n\n### 3. Qualifying criteria\n- Has budget\n',
+        'utf8'
+    );
+    await fs.writeFile(
+        path.join(profilesDir, 'EnterpriseClient.md'),
+        '### 1. Characteristics\n- Enterprise\n\n### 2. Interests\n- Security\n\n### 3. Qualifying criteria\n- Needs procurement\n',
+        'utf8'
+    );
+
+    const listed = await action({
+        promptText: JSON.stringify({}),
+    });
+    assert.equal(listed.success, true);
+    assert.deepEqual(listed.profiles, ['Developer', 'EnterpriseClient']);
+
+    const displayed = await action({
+        promptText: JSON.stringify({ profileName: 'Developer' }),
+    });
+    assert.equal(displayed.success, true);
+    assert.equal(displayed.profileName, 'Developer');
+    assert.match(displayed.content, /## Characteristics/);
+    assert.match(displayed.content, /- API-focused/);
+    assert.deepEqual(displayed.sectionsDisplayed, ['Characteristics', 'Interests', 'Qualifying criteria']);
+
+    const filtered = await action({
+        promptText: JSON.stringify({ profileName: 'Developer', sections: ['Interests'] }),
+    });
+    assert.equal(filtered.success, true);
+    assert.match(filtered.content, /## Interests/);
+    assert.deepEqual(filtered.sectionsDisplayed, ['Interests']);
+});

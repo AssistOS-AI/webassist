@@ -1,38 +1,21 @@
 # admin-flow
 
 ## Description
-Orchestrates webAdmin owner requests by selecting and executing exactly one admin skill (news, statistics, lead info, lead updates, profile management, site info management, or owner info management).
-Use this skill when the owner asks for recent leads, metrics/statistics, details about a specific lead, to update a lead status, to create/update a profiling template, to manage website knowledge files, or to manage owner contact details.
-The runtime already injects existing profiles, owner info, and website info into context each turn.
-Trigger keywords include: "news", "latest leads", "statistics", "stats", "lead info", "lead details", "update lead", "mark lead", "status", "create profile", "add profile", "new profile", "site info", "website info", "owner info", "contact info".
+Orchestrates one owner request in webAdmin by selecting exactly one allowed skill that best satisfies the request.
+The current user is an admin of a website profiling application. A separate website chatbot interacts with visitors, tries to match them to existing profiles, and can convert matched visitors into leads. The admin needs help with lead insights, profile management, website information, and owner contact data used for meeting proposals.
 
 ## Instructions
-1. Identify the owner message, known lead IDs, and preloaded context data (profiles, owner info, website info) from the input prompt context.
-2. Choose exactly one skill and define its arguments (write all operational text in English):
-   - `news`: `{ "limit": 5 }` (default to 5 when unspecified).
-   - `statistics`: `{ "interval": "day" | "week" | "month" | "year" }` (default to `month` when unspecified).
-   - `lead-info`: `{ "leadId": "session-lead.md" }`.
-   - `update-lead`: `{ "leadId": "session-lead.md", "newStatus": "invalid" | "contacted" | "converted" }`.
-    - `manage-profile`: `{ "profileName": "...", "characteristics": ["..."], "interests": ["..."], "qualifyingCriteria": ["..."] }`.
-    - `manage-site-info`: read `{ "fileName": "..." }`; write `{ "fileName": "...", "content": "..." }`; batch write `{ "files": [{ "name": "...", "content": "..." }] }`.
-    - `manage-owner-info`: read `{ "read": true }`; targeted update `{ "email": "...", "phone": "...", "calendar": "...", "meeting": "..." }`; full overwrite `{ "content": "..." }`.
-   Rules:
-   - Use an existing leadId whenever the owner refers to a specific lead.
-   - Validate `newStatus` is one of the allowed values.
-3. Execute the matching skill (skill calls and inputs must be in English):
-    - `news` → call `news` with the JSON arguments.
-    - `statistics` → call `statistics` with the JSON arguments.
-    - `lead-info` → call `lead-info` with the JSON arguments.
-    - `update-lead` → call `update-lead` with the JSON arguments.
-    - `manage-profile` → call `manage-profile` with the JSON arguments.
-    - `manage-site-info` → call `manage-site-info` with the JSON arguments.
-    - `manage-owner-info` → call `manage-owner-info` with the JSON arguments.
-4. Draft the owner-facing response in the same language as the owner message. Use the skill result to answer concisely.
-   - All operational text, tool selection reasoning, and any intermediate notes must be in English.
-   - any text you use from the user MUST be translated to english
-   - any text used as parameters for the skills you call MUST be translated to english
-   - only respond in the user's language when addressing to them.
-5. Return **plain text only** — the final owner-facing response string (no JSON).
+1. Detect the user communication language and respond to the user in that same language.
+2. Keep all non-user-facing operational work in English:
+   - skill selection reasoning,
+   - parameter construction,
+   - intermediate notes,
+   - any internal text not directly addressed to the user.
+3. Translate any user text that is reused as skill input parameters into English before calling a skill.
+4. Use preloaded context (profiles, owner info, website info, leads context) to choose the best skill for the request.
+5. Select exactly one skill from the allowed list and execute it with valid JSON arguments in English.
+6. Use the skill result to compose a concise final response for the user in the detected user language.
+7. Return plain text only (no JSON).
 
 ## Allowed Skills
 - news
