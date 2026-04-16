@@ -18,7 +18,6 @@ The **webAdmin** agent is implemented as a Node.js CLI tool for site owners. It 
 ## CLI Parameters
 - `<message>` (positional): Owner message text. In interactive mode it can be omitted at startup and provided turn-by-turn.
 - `--session-id <id>` / `--session-id=<id>`: Reuse a specific session id for the interactive process.
-- `--json`: Print JSON output from runtime instead of plain text response.
 - `--data-dir <dir>` / `--data-dir=<dir>`: Override the runtime data directory used for `config/`, `info/`, `profilesInfo/`, `leads/`, and `sessions/`.
 - `--agent-root <dir>` / `--agent-root=<dir>`: Override the agent root used by runtime initialization.
   - This changes where default `webassist-shared/data` is resolved when `--data-dir` is not provided.

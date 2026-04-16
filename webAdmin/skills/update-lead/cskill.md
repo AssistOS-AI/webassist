@@ -1,6 +1,6 @@
 # update-lead
 
-## Summary
+## Description
 Updates the lifecycle status of an existing lead.
 
 ## Input Format

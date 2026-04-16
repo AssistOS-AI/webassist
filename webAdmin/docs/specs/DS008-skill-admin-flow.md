@@ -8,7 +8,7 @@ An **oskill** executed through `RecursiveSkilledAgent` on every owner turn.
 
 ## Tool Definition
 - **Name**: `admin-flow`
-- **Description**: Executes one of the admin skills (`news`, `statistics`, `lead-info`, `update-lead`, `manage-profile`, `list-profiles`) based on the owner request.
+- **Description**: Executes one of the admin skills (`news`, `statistics`, `lead-info`, `update-lead`, `manage-profile`, `list-profiles`, `manage-site-info`, `manage-owner-info`) based on the owner request.
 - **Session Type**: Loop
 
 ## Inputs

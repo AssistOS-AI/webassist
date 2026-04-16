@@ -1,6 +1,6 @@
 # create-lead
 
-## Summary
+## Description
 Creates or updates a deterministic lead markdown file for a session.
 
 ## Input Format

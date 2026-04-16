@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 import { createWebAdminAgent } from './WebAdminAgent.mjs';
 
 function printUsage() {
-    process.stdout.write(`Usage:\n  webAdmin/src/index.mjs "message"\n\nOptions:\n  --session-id <id>            Reuse a specific session id\n  --json                       Print JSON output from runtime\n  --data-dir <dir>             Override data directory\n  --agent-root <dir>           Override agent root directory\n  -h, --help                   Show this help\n`);
+    process.stdout.write(`Usage:\n  webAdmin/src/index.mjs "message"\n\nOptions:\n  --session-id <id>            Reuse a specific session id\n  --data-dir <dir>             Override data directory\n  --agent-root <dir>           Override agent root directory\n  -h, --help                   Show this help\n`);
 }
 
 function generateSessionId() {
@@ -21,7 +21,6 @@ function parseArguments(argv) {
     const positionals = [];
     const options = {
         sessionId: '',
-        json: false,
         dataDir: '',
         agentRoot: '',
         help: false,
@@ -35,11 +34,6 @@ function parseArguments(argv) {
                 positionals.push(argv[cursor]);
             }
             break;
-        }
-
-        if (token === '--json') {
-            options.json = true;
-            continue;
         }
 
         if (token === '-h' || token === '--help') {
@@ -105,26 +99,19 @@ function parseArguments(argv) {
     };
 }
 
-async function runTurn(agent, { sessionId, message, jsonOutput }) {
+async function runTurn(agent, { sessionId, message }) {
     const result = await agent.handleMessage({ sessionId, message });
-    if (jsonOutput) {
-        process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
-        return;
-    }
     process.stdout.write(`${result.response}\n`);
 }
 
 async function runInteractive(agent, state) {
-    if (!state.json) {
-        process.stdout.write(`Session ID: ${state.sessionId}\n`);
-        process.stdout.write('Type exit to leave\n');
-    }
+    process.stdout.write(`Session ID: ${state.sessionId}\n`);
+    process.stdout.write('Type exit to leave\n');
 
     if (state.message) {
         await runTurn(agent, {
             sessionId: state.sessionId,
             message: state.message,
-            jsonOutput: state.json,
         });
     }
 
@@ -156,7 +143,6 @@ async function runInteractive(agent, state) {
         await runTurn(agent, {
             sessionId: state.sessionId,
             message: text,
-            jsonOutput: state.json,
         });
         rl.prompt();
     }

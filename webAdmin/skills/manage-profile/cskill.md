@@ -1,6 +1,6 @@
 # manage-profile
 
-## Summary
+## Description
 Creates or updates a profiling template in `data/profilesInfo/` for the webCli agent to use during visitor matching.
 
 ## Input Format

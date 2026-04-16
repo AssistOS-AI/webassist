@@ -1,6 +1,6 @@
 # statistics
 
-## Summary
+## Description
 Computes session and lead metrics for a requested interval.
 
 ## Input Format

@@ -1,6 +1,6 @@
 # book-meeting
 
-## Summary
+## Description
 Loads owner meeting configuration text for high-intent visitors.
 
 ## Input Format

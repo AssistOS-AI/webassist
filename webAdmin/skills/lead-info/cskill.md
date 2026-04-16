@@ -1,6 +1,6 @@
 # lead-info
 
-## Summary
+## Description
 Returns lead details and related session history.
 
 ## Input Format

@@ -1,6 +1,6 @@
 # news
 
-## Summary
+## Description
 Returns newest leads first with compact summary data.
 
 ## Input Format

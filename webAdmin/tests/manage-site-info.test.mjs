@@ -1,0 +1,49 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+
+import { createWebAdminSandbox } from './helpers.mjs';
+import { action } from '../skills/manage-site-info/src/index.mjs';
+
+test('manage-site-info writes and reads info files', async (t) => {
+    const sandbox = await createWebAdminSandbox();
+    t.after(async () => sandbox.cleanup());
+
+    const writeResult = await action({
+        promptText: JSON.stringify({
+            fileName: 'overview',
+            content: 'Website overview content.',
+        }),
+        dataDir: sandbox.dataDir,
+    });
+
+    assert.equal(writeResult.success, true);
+    const infoPath = path.join(sandbox.dataDir, 'info', 'overview.md');
+    const stored = await fs.readFile(infoPath, 'utf8');
+    assert.match(stored, /Website overview content/);
+
+    const readResult = await action({
+        promptText: JSON.stringify({ fileName: 'overview' }),
+        dataDir: sandbox.dataDir,
+    });
+
+    assert.equal(readResult.success, true);
+    assert.match(readResult.content, /# overview\.md/);
+    assert.match(readResult.content, /Website overview content/);
+});
+
+test('manage-site-info derives filename when missing', async (t) => {
+    const sandbox = await createWebAdminSandbox();
+    t.after(async () => sandbox.cleanup());
+
+    const writeResult = await action({
+        promptText: JSON.stringify({
+            content: 'Frequently Asked Questions for the Product',
+        }),
+        dataDir: sandbox.dataDir,
+    });
+
+    assert.equal(writeResult.success, true);
+    assert.deepEqual(writeResult.created, ['frequently-asked-questions-for-the-product.md']);
+});

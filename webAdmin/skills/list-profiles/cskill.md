@@ -1,6 +1,6 @@
 # list-profiles
 
-## Summary
+## Description
 Lists available profiling templates from `data/profilesInfo/`.
 
 ## Input Format
