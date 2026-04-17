@@ -27,7 +27,6 @@ test('manage-owner-info updates standard contact lines', async (t) => {
         }),
     });
 
-    assert.equal(updateResult.success, true);
     const content = await fs.readFile(path.join(configDir, 'owner.md'), 'utf8');
     assert.match(content, /Email: new@example\.com/);
     assert.match(content, /Phone: 111/);

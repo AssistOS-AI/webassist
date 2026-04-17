@@ -67,7 +67,14 @@ async function readOwnerFile(filePath) {
 }
 
 export async function action({ promptText }) {
-    const payload = parseInput(promptText);
+    let payload;
+    try {
+        payload = parseInput(promptText);
+    } catch (error) {
+        const message = error?.message || 'Invalid input.';
+        return { error: message, message };
+    }
+
     const store = getDataStore();
     const dataDir = getConfiguredDataDir();
     const configDir = path.join(dataDir, DATASTORE_TYPES.CONFIG);
@@ -76,7 +83,7 @@ export async function action({ promptText }) {
     if (payload.read === true) {
         const content = await readOwnerFile(ownerPath);
         return {
-            success: true,
+            message: 'Owner info loaded.',
             content: content.trim(),
         };
     }
@@ -93,7 +100,7 @@ export async function action({ promptText }) {
             }
         }
         await store.updateFile(DATASTORE_TYPES.CONFIG, 'owner', { Content: payload.content.trim() });
-        return { success: true, updated: true };
+        return { updated: true, message: 'Owner info replaced.' };
     }
 
     const updates = {};
@@ -104,7 +111,8 @@ export async function action({ promptText }) {
     }
 
     if (Object.keys(updates).length === 0) {
-        return { success: false, error: 'No updates provided.' };
+        const message = 'No updates provided.';
+        return { error: message, message };
     }
 
     await fs.mkdir(configDir, { recursive: true });
@@ -113,5 +121,5 @@ export async function action({ promptText }) {
     const updatedLines = updateLines(lines, updates);
     await fs.writeFile(ownerPath, `${updatedLines.join('\n')}\n`, 'utf8');
 
-    return { success: true, updated: true };
+    return { updated: true, message: 'Owner info updated.' };
 }

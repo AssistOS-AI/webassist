@@ -154,13 +154,21 @@ function renderSections(sections) {
 }
 
 export async function action({ promptText }) {
+    let payload;
+    try {
+        payload = parseInput(promptText);
+    } catch (error) {
+        const message = error?.message || 'Invalid input.';
+        return { error: message, message };
+    }
+
     const {
         profileName,
         characteristics,
         interests,
         qualifyingCriteria,
         sections,
-    } = parseInput(promptText);
+    } = payload;
 
     const store = getDataStore();
     const profilesDir = path.join(getConfiguredDataDir(), DATASTORE_TYPES.PROFILES_INFO);
@@ -175,14 +183,16 @@ export async function action({ promptText }) {
             .filter(Boolean)
             .sort((left, right) => left.localeCompare(right));
         return {
-            success: true,
+            message: profiles.length === 0
+                ? 'No profiles found.'
+                : `Retrieved ${profiles.length} profile${profiles.length === 1 ? '' : 's'}.`,
             profiles,
         };
     }
 
     const normalizedProfileName = normalizeProfileFileName(profileName);
     if (!normalizedProfileName.ok) {
-        return { success: false, error: normalizedProfileName.error };
+        return { error: normalizedProfileName.error, message: normalizedProfileName.error };
     }
 
     const existingFileName = await findExistingProfileFile(profilesDir, normalizedProfileName.fileName);
@@ -190,12 +200,13 @@ export async function action({ promptText }) {
 
     if (!hasWritePayload) {
         if (!existingFileName) {
-            return { success: false, error: `Profile not found: ${profileName}` };
+            const message = `Profile not found: ${profileName}`;
+            return { error: message, message };
         }
 
         const normalizedSections = normalizeSectionLabels(sections);
         if (!normalizedSections.ok) {
-            return { success: false, error: normalizedSections.error };
+            return { error: normalizedSections.error, message: normalizedSections.error };
         }
         const sectionNames = resolveSectionNames(normalizedSections.labels);
         const profileData = sectionNames
@@ -203,7 +214,7 @@ export async function action({ promptText }) {
             : await store.getFile(DATASTORE_TYPES.PROFILES_INFO, fileName);
 
         return {
-            success: true,
+            message: `Profile ${stripExtension(`${fileName}.md`)} loaded.`,
             profileName: stripExtension(`${fileName}.md`),
             content: renderSections(profileData.sections),
             sectionsDisplayed: profileData.sections.map((section) => section.name),
@@ -212,15 +223,15 @@ export async function action({ promptText }) {
 
     const normalizedCharacteristics = normalizeStringList(characteristics, 'characteristics');
     if (!normalizedCharacteristics.ok) {
-        return { success: false, error: normalizedCharacteristics.error };
+        return { error: normalizedCharacteristics.error, message: normalizedCharacteristics.error };
     }
     const normalizedInterests = normalizeStringList(interests, 'interests');
     if (!normalizedInterests.ok) {
-        return { success: false, error: normalizedInterests.error };
+        return { error: normalizedInterests.error, message: normalizedInterests.error };
     }
     const normalizedCriteria = normalizeStringList(qualifyingCriteria, 'qualifyingCriteria');
     if (!normalizedCriteria.ok) {
-        return { success: false, error: normalizedCriteria.error };
+        return { error: normalizedCriteria.error, message: normalizedCriteria.error };
     }
 
     try {
@@ -246,7 +257,7 @@ export async function action({ promptText }) {
     const profilePath = path.join(profilesDir, `${fileName}.md`);
 
     return {
-        success: true,
+        message: `${existingFileName ? 'Updated' : 'Created'} profile ${fileName}.md.`,
         created: !existingFileName,
         updated: Boolean(existingFileName),
         profileName: `${fileName}.md`,

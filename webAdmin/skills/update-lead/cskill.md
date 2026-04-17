@@ -10,9 +10,10 @@ Updates the lifecycle status of an existing lead. Typical triggers include `upda
 
 ## Output Format
 - `object` with:
-  - `success` (boolean)
+  - `message` (string)
   - `leadId` (string)
   - `lead` (object)
+  - `error` (string) on validation or lookup failures
 
 ## Constraints
 - Rejects unknown lead ids and invalid statuses.

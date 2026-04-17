@@ -9,8 +9,9 @@ Computes session and lead metrics for a requested interval. Typical triggers inc
 
 ## Output Format
 - `object` with:
-  - `success` (boolean)
+  - `message` (string)
   - `stats` (object)
+  - `error` (string) on input validation failures
 
 ## Constraints
 - Uses filesystem timestamps and parsed lead metadata.

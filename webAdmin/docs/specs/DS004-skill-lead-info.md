@@ -13,11 +13,14 @@ A **cskill** executed through `RecursiveSkilledAgent` when the owner requests de
   - `leadId` (string): The ID of the lead.
 
 ## Output
-A JSON object or stringified summary containing:
-- The contents of the lead file (`data/leads/{leadId}.md`).
-- The contents of the corresponding split session files:
-  - `data/sessions/{sessionId}-profile.md`
-  - `data/sessions/{sessionId}-history.md`
+A JSON object containing:
+- `message` (string)
+- `info` (object) on success with:
+  - the contents of the lead file (`data/leads/{leadId}.md`)
+  - the contents of the corresponding split session files:
+    - `data/sessions/{sessionId}-profile.md`
+    - `data/sessions/{sessionId}-history.md`
+- `error` (string) on validation or lookup failure
 
 ## Execution Logic (Node.js)
 1. Read `data/leads/{leadId}.md`. If not found, return an error.

@@ -21,7 +21,6 @@ test('manage-profile creates or updates profiles case-insensitively', async (t) 
         }),
     });
 
-    assert.equal(result.success, true);
     assert.equal(result.created, true);
     assert.equal(result.updated, false);
     assert.equal(result.profileName, 'Developer.md');
@@ -44,7 +43,6 @@ test('manage-profile creates or updates profiles case-insensitively', async (t) 
         }),
     });
 
-    assert.equal(updated.success, true);
     assert.equal(updated.created, false);
     assert.equal(updated.updated, true);
     assert.equal(updated.profileName, 'Developer.md');
@@ -76,13 +74,11 @@ test('manage-profile lists profiles and displays one profile with optional secti
     const listed = await action({
         promptText: JSON.stringify({}),
     });
-    assert.equal(listed.success, true);
     assert.deepEqual(listed.profiles, ['Developer', 'EnterpriseClient']);
 
     const displayed = await action({
         promptText: JSON.stringify({ profileName: 'Developer' }),
     });
-    assert.equal(displayed.success, true);
     assert.equal(displayed.profileName, 'Developer');
     assert.match(displayed.content, /## Characteristics/);
     assert.match(displayed.content, /- API-focused/);
@@ -91,7 +87,6 @@ test('manage-profile lists profiles and displays one profile with optional secti
     const filtered = await action({
         promptText: JSON.stringify({ profileName: 'Developer', sections: ['Interests'] }),
     });
-    assert.equal(filtered.success, true);
     assert.match(filtered.content, /## Interests/);
     assert.deepEqual(filtered.sectionsDisplayed, ['Interests']);
 });

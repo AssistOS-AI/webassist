@@ -72,7 +72,14 @@ async function readInfoFile(store, fileName) {
 }
 
 export async function action({ promptText }) {
-    const payload = parseInput(promptText);
+    let payload;
+    try {
+        payload = parseInput(promptText);
+    } catch (error) {
+        const message = error?.message || 'Invalid input.';
+        return { error: message, message };
+    }
+
     const store = getDataStore();
     const dataDir = getConfiguredDataDir();
     const created = [];
@@ -82,17 +89,19 @@ export async function action({ promptText }) {
     if (readTarget && typeof payload.content !== 'string' && !Array.isArray(payload.files)) {
         const name = readTarget;
         if (!name) {
-            return { success: false, error: 'fileName is required for read operations.' };
+            const message = 'fileName is required for read operations.';
+            return { error: message, message };
         }
         try {
             const result = await readInfoFile(store, name);
             return {
-                success: true,
+                message: `Loaded site info file ${result.fileName}.`,
                 content: `# ${result.fileName}\n\n${result.content.trim()}`,
             };
         } catch (error) {
             if (error && error.code === 'ENOENT') {
-                return { success: false, error: `File not found: ${name}.md` };
+                const message = `File not found: ${name}.md`;
+                return { error: message, message };
             }
             throw error;
         }
@@ -113,14 +122,19 @@ export async function action({ promptText }) {
             }
             index += 1;
         }
-        return { success: true, created, updated };
+        return {
+            message: `Processed ${created.length + updated.length} site info file${created.length + updated.length === 1 ? '' : 's'}.`,
+            created,
+            updated,
+        };
     }
 
     if (typeof payload.content === 'string') {
         const fileName = sanitizeName(payload.fileName)
             || deriveNameFromContent(payload.promptText || payload.content, 1);
         if (!fileName) {
-            return { success: false, error: 'fileName is required.' };
+            const message = 'fileName is required.';
+            return { error: message, message };
         }
         const result = await writeInfoFile(store, dataDir, fileName, payload.content);
         if (result.created) {
@@ -128,8 +142,13 @@ export async function action({ promptText }) {
         } else {
             updated.push(result.fileName);
         }
-        return { success: true, created, updated };
+        return {
+            message: `${result.created ? 'Created' : 'Updated'} site info file ${result.fileName}.`,
+            created,
+            updated,
+        };
     }
 
-    return { success: false, error: 'No action requested.' };
+    const message = 'No action requested.';
+    return { error: message, message };
 }

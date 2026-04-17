@@ -14,7 +14,7 @@ Creates or updates `data/config/owner.md` with owner contact information. Typica
 
 ## Output Format
 - `object` with:
-  - `success` (boolean)
+  - `message` (string)
   - `updated` (boolean, optional)
   - `content` (string, optional)
   - `error` (string, optional)

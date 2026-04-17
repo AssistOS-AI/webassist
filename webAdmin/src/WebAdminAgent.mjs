@@ -58,7 +58,6 @@ function normalizeRuntimeResult(executionResult) {
     }
 
     return {
-        success: true,
         response,
     };
 }

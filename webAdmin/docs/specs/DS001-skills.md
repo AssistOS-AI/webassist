@@ -11,8 +11,10 @@ Skill runtime note:
 - They are discovered and registered from `webAdmin/skills/` by `RecursiveSkilledAgent`.
 - Execution is routed through `RecursiveSkilledAgent` skill execution APIs.
 - File persistence is handled through `MarkdownDataStore` (AchillesAgentLib) with numbered markdown sections (`### N. Section Name`).
+- Skill payloads expose domain data and optional `error` fields; they do not rely on `success` flags.
+- Skills also include `message` text fields so loop-session planners receive human-readable execution outcomes alongside structured data.
 - Owner requests are orchestrated by the `admin-flow` **oskills**.
-  - `admin-flow` returns a plain-text response string for the owner.
+  - `admin-flow` returns a plain-text response string for the owner in structured, user-friendly formatting.
 
 ## Skill: update-lead
 - **Function**: Manages the lifecycle of a lead in `leads/`.

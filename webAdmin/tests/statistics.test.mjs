@@ -29,7 +29,6 @@ test('statistics filters sessions and leads by the requested interval', async (t
         promptText: JSON.stringify({ interval: 'month' }),
         referenceDate,
     });
-    assert.equal(result.success, true);
     assert.equal(result.stats.totalSessions, 1);
     assert.equal(result.stats.totalLeads, 1);
     assert.equal(result.stats.leadsByProfile.Developer, 1);

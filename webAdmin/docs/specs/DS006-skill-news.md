@@ -13,12 +13,15 @@ A **cskill** executed through `RecursiveSkilledAgent` when queried about recent 
   - `limit` (number, optional): The maximum number of recent leads to return. Default is 5.
 
 ## Output
-A list/array of JSON objects containing brief summaries of the recent leads:
+A JSON object containing:
+- `message` (string)
+- `leads` list/array of JSON objects with brief summaries of the recent leads:
 - `leadId` (string)
 - `status` (string, e.g., `new`)
 - `profile` (string)
 - `summary` (string)
 - `createdAt` (timestamp or formatted date string)
+- `error` (string) on input validation failures
 
 ## Execution Logic (Node.js)
 1. Read the `data/leads/` directory.

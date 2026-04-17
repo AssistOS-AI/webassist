@@ -11,7 +11,7 @@ import {
 } from '../../../src/constants/datastore.mjs';
 
 function normalizeLeadId(leadId) {
-    const normalized = String(leadId ?? '').trim();
+    const normalized = typeof leadId === 'string' ? leadId.trim() : '';
     if (!normalized) {
         throw new Error('leadId is required.');
     }
@@ -33,10 +33,19 @@ function parseInput(promptText) {
 }
 
 export async function action({ promptText }) {
-    const { leadId } = parseInput(promptText);
+    let payload;
+    try {
+        payload = parseInput(promptText);
+    } catch (error) {
+        const message = error?.message || 'Invalid input.';
+        return { error: message, message };
+    }
 
-    if (!leadId) {
-        return { success: false, error: 'leadId is required.' };
+    const { leadId } = payload;
+
+    if (typeof leadId !== 'string' || !leadId.trim()) {
+        const message = 'leadId is required.';
+        return { error: message, message };
     }
 
     const store = getDataStore();
@@ -49,7 +58,8 @@ export async function action({ promptText }) {
             || (normalizeLeadId(normalizedLeadId).match(/^(.*)-lead(?:-[^.]+)?$/)?.[1] ?? null);
 
         if (!sessionId) {
-            return { success: false, error: `Could not determine the session for ${normalizedLeadId}.` };
+            const message = `Could not determine the session for ${normalizedLeadId}.`;
+            return { error: message, message };
         }
 
         let sessionRecord;
@@ -91,7 +101,7 @@ export async function action({ promptText }) {
         ].filter(Boolean).join('\n\n');
         const hasSessionData = Boolean(sessionRecord || sessionHistoryRecord);
         return {
-            success: true,
+            message: `Lead details loaded for ${normalizedLeadId}.`,
             info: {
                 leadId: normalizedLeadId,
                 sessionId,
@@ -115,7 +125,8 @@ export async function action({ promptText }) {
 
     } catch (error) {
         if (error && error.code === 'ENOENT') {
-            return { success: false, error: `Lead not found: ${normalizedLeadId}` };
+            const message = `Lead not found: ${normalizedLeadId}`;
+            return { error: message, message };
         }
         throw error;
     }

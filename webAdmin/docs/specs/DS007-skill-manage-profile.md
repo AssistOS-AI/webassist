@@ -17,12 +17,13 @@ A **cskill** executed through `RecursiveSkilledAgent` when the owner requests a 
 
 ## Output
 A JSON object containing:
-- `success` (boolean)
+- `message` (string)
 - `created` (boolean)
 - `updated` (boolean)
 - `profileName` (string)
 - `profilePath` (string)
 - `profile` (object) with the provided lists
+- `error` (string) on invalid input or missing profile
 
 ## Execution Logic (Node.js)
 1. Validate `profileName` and reject path separators or empty names.

@@ -9,7 +9,7 @@ Returns lead details and related session history. Typical triggers include `lead
 
 ## Output Format
 - `object` with:
-  - `success` (boolean)
+  - `message` (string)
   - `info` (object) on success
   - `error` (string) on failure
 

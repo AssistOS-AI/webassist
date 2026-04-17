@@ -19,7 +19,7 @@ Mode mapping:
 
 ## Output Format
 - `object` with:
-  - `success` (boolean)
+  - `message` (string)
   - `profiles` (array of strings) for list mode
   - `profileName` (string) for display/create/update modes
   - `content` (string) and `sectionsDisplayed` (array) for display mode

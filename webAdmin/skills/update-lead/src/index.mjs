@@ -6,7 +6,7 @@ import { DATASTORE_TYPES, LEAD_FIELDS, LEAD_SECTIONS } from '../../../src/consta
 const ALLOWED_STATUSES = new Set(['invalid', 'contacted', 'converted']);
 
 function normalizeLeadId(leadId) {
-    const normalized = String(leadId ?? '').trim();
+    const normalized = typeof leadId === 'string' ? leadId.trim() : '';
     if (!normalized) {
         throw new Error('leadId is required.');
     }
@@ -36,13 +36,23 @@ function parseInput(promptText) {
 }
 
 export async function action({ promptText }) {
-    const { leadId, newStatus } = parseInput(promptText);
+    let payload;
+    try {
+        payload = parseInput(promptText);
+    } catch (error) {
+        const message = error?.message || 'Invalid input.';
+        return { error: message, message };
+    }
 
-    if (!leadId) {
-        return { success: false, error: 'leadId is required.' };
+    const { leadId, newStatus } = payload;
+
+    if (typeof leadId !== 'string' || !leadId.trim()) {
+        const message = 'leadId is required.';
+        return { error: message, message };
     }
     if (!ALLOWED_STATUSES.has(newStatus)) {
-        return { success: false, error: `Invalid status: ${newStatus}` };
+        const message = `Invalid status: ${newStatus}`;
+        return { error: message, message };
     }
 
     const store = getDataStore();
@@ -53,7 +63,8 @@ export async function action({ promptText }) {
         existingLead = await store.getSectionMap(DATASTORE_TYPES.LEADS, normalizedLeadId);
     } catch (error) {
         if (error && error.code === 'ENOENT') {
-            return { success: false, error: `Lead not found: ${normalizedLeadId}` };
+            const message = `Lead not found: ${normalizedLeadId}`;
+            return { error: message, message };
         }
         throw error;
     }
@@ -81,7 +92,7 @@ export async function action({ promptText }) {
     });
 
     return {
-        success: true,
+        message: `Lead ${normalizedLeadId} updated to status ${updatedLead.status}.`,
         leadId: normalizedLeadId,
         lead: {
             ...updatedLead,

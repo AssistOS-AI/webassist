@@ -15,7 +15,7 @@ Creates, updates, or displays site information markdown files under `data/info/`
 
 ## Output Format
 - `object` with:
-  - `success` (boolean)
+  - `message` (string)
   - `created` (array of strings, optional)
   - `updated` (array of strings, optional)
   - `content` (string, optional) – content displayed (with title)

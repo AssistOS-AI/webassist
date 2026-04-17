@@ -9,8 +9,9 @@ Returns newest leads first with compact summary data. Typical triggers include `
 
 ## Output Format
 - `object` with:
-  - `success` (boolean)
+  - `message` (string)
   - `leads` (array)
+  - `error` (string) on input validation failures
 
 ## Constraints
 - Sorts by newest lead timestamp descending.

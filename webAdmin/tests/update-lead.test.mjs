@@ -19,7 +19,6 @@ test('update-lead updates lead lifecycle state and rejects invalid cases', async
         }),
     });
 
-    assert.equal(result.success, true);
     assert.equal(result.lead.status, 'contacted');
 
     const content = await fs.readFile(
@@ -35,7 +34,7 @@ test('update-lead updates lead lifecycle state and rejects invalid cases', async
             newStatus: 'new',
         }),
     });
-    assert.equal(invalidStatus.success, false);
+    assert.equal('success' in invalidStatus, false);
     assert.match(invalidStatus.error, /Invalid status/);
 
     const missingLead = await action({
@@ -44,6 +43,6 @@ test('update-lead updates lead lifecycle state and rejects invalid cases', async
             newStatus: 'invalid',
         }),
     });
-    assert.equal(missingLead.success, false);
+    assert.equal('success' in missingLead, false);
     assert.match(missingLead.error, /Lead not found/);
 });

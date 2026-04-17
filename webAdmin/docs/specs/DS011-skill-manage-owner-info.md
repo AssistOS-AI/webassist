@@ -18,9 +18,10 @@ A **cskill** executed through `RecursiveSkilledAgent` when the owner updates con
   - `read` (boolean, optional): when true, returns current content.
 
 ## Output
-- `success` (boolean)
+- `message` (string)
 - `updated` (boolean, optional)
 - `content` (string, optional)
+- `error` (string, optional)
 
 ## Execution Logic (Node.js)
 1. If `read` is true, return the current file content (empty if missing).

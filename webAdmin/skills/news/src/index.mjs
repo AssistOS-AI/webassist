@@ -34,7 +34,15 @@ function parseInput(promptText) {
 }
 
 export async function action({ promptText }) {
-    const { limit = 5 } = parseInput(promptText);
+    let payload;
+    try {
+        payload = parseInput(promptText);
+    } catch (error) {
+        const message = error?.message || 'Invalid input.';
+        return { error: message, message };
+    }
+
+    const { limit = 5 } = payload;
 
     const store = getDataStore();
     const normalizedLimit = Number.isInteger(limit) && limit > 0 ? limit : 5;
@@ -57,7 +65,10 @@ export async function action({ promptText }) {
     );
 
     if (leadRecords.length === 0) {
-        return { success: true, leads: [] };
+        return {
+            message: 'No leads found.',
+            leads: [],
+        };
     }
 
     leadRecords.sort((left, right) => right.timestamp - left.timestamp);
@@ -69,5 +80,8 @@ export async function action({ promptText }) {
         createdAt: String(leadRecord.leadInfo[LEAD_FIELDS.CREATED_AT] ?? '').trim() || toIsoTimestamp(new Date(leadRecord.timestamp)),
     }));
 
-    return { success: true, leads: recentLeads };
+    return {
+        message: `Retrieved ${recentLeads.length} recent lead${recentLeads.length === 1 ? '' : 's'}.`,
+        leads: recentLeads,
+    };
 }

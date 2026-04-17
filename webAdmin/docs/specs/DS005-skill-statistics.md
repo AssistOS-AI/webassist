@@ -14,9 +14,11 @@ A **cskill** executed through `RecursiveSkilledAgent` when asked for statistics 
 
 ## Output
 A JSON object containing:
+- `message` (string)
 - `totalSessions`: Total number of active/past sessions created in the interval.
 - `totalLeads`: Total number of leads created in the interval.
 - `leadsByProfile`: An object mapping profile names to their respective counts (e.g., `{"Developer": 5, "Client": 2}`).
+- `error` (string) on input validation failures
 
 ## Execution Logic (Node.js)
 1. Determine the start and end dates based on the requested `interval`.

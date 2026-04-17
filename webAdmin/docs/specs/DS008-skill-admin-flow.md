@@ -20,10 +20,14 @@ The runtime prompt includes:
 ## Output
 - **Plain text** response string (no JSON). The response must be in the same language as the owner’s message.
 - **Operational text** (tool selection, arguments, intermediate notes) must be written in **English**.
+- Skill outputs must be transformed into a structured, owner-friendly format (typically `key: value`, with short bullet lists for arrays).
+- The orchestrator must preserve the exact values coming from skills; only formatting can change.
+- Internal flags such as `success` must not be shown to the owner.
 
 ## Execution Logic (Node.js)
 1. Parse the owner message and identify which admin skill should be executed.
 2. Build the skill arguments (apply defaults when needed and validate required fields).
 3. Execute the selected skill via `RecursiveSkilledAgent` (inputs in English).
-4. Draft the final owner-facing response based on the skill result.
-5. Return only the response string.
+4. Read skill output (`message` + domain data or `error`) and draft the final owner-facing response in a structured, user-friendly format.
+5. If skill output includes `error`, report it clearly in owner language without altering error meaning.
+6. Return only the response string.

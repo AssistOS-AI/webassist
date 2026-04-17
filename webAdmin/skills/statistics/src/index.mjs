@@ -63,12 +63,27 @@ function parseInput(promptText) {
 
 export async function action({ promptText, referenceDate = new Date() }) {
     const store = getDataStore();
-    const { interval } = parseInput(promptText);
+    let payload;
+    try {
+        payload = parseInput(promptText);
+    } catch (error) {
+        const message = error?.message || 'Invalid input.';
+        return { error: message, message };
+    }
+
+    const { interval } = payload;
+
+    let window;
+    try {
+        window = getIntervalStart(interval, referenceDate);
+    } catch (error) {
+        const message = error?.message || 'Invalid interval.';
+        return { error: message, message };
+    }
 
     const sessionListing = await store.listFiles(DATASTORE_TYPES.SESSIONS);
     const sessionProfileFiles = sessionListing.files
         .filter((fileName) => fileName.endsWith(`-${SESSION_FILE_SUFFIX.PROFILE}`));
-    const window = getIntervalStart(interval, referenceDate);
 
     const sessionStats = await Promise.all(
         sessionProfileFiles.map((itemName) => store.getFileStats(DATASTORE_TYPES.SESSIONS, itemName))
@@ -99,7 +114,7 @@ export async function action({ promptText, referenceDate = new Date() }) {
     }
 
     return {
-        success: true,
+        message: `Statistics computed for interval ${interval}.`,
         stats: {
             interval,
             windowStart: window.start.toISOString(),

@@ -17,10 +17,11 @@ A **cskill** executed through `RecursiveSkilledAgent` when the owner manages web
   - `promptText` (optional): source text used for filename derivation when explicit names are missing.
 
 ## Output
-- `success` (boolean)
+- `message` (string)
 - `created` (array, optional) – filenames created
 - `updated` (array, optional) – filenames updated
 - `content` (string, optional) – when reading, returns `# filename.md` + file content
+- `error` (string, optional)
 
 ## Execution Logic (Node.js)
 1. If `fileName` (or `readFile`) is provided without write payload, read the file and return content prefixed with the filename.

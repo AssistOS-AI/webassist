@@ -131,7 +131,7 @@ test('webAdmin agent loads achillesAgentLib and executes owner requests', async 
     });
 
     assert.equal(agent.achilles.libraryName, 'achillesAgentLib');
-    assert.equal(updateResult.success, true);
+    assert.equal('success' in updateResult, false);
     assert.match(updateResult.response, /statusul converted/);
 
     const updatedLeadContent = await fs.readFile(
@@ -145,7 +145,7 @@ test('webAdmin agent loads achillesAgentLib and executes owner requests', async 
         referenceDate: new Date('2026-04-06T12:00:00.000Z'),
     });
 
-    assert.equal(statsResult.success, true);
+    assert.equal('success' in statsResult, false);
     assert.match(statsResult.response, /Statisticile pe luna curenta/);
     assert.ok(llmAgent.calls.length >= 4);
     const promptWithPreload = llmAgent.calls.find((call) => String(call?.prompt || '').includes('Known profile templates:'));
