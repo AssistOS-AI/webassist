@@ -17,7 +17,7 @@ The **webCli** agent uses specific skills to manage the conversation flow and da
 - **Function**: Coordinates one full visitor turn using the skill allowlist.
 - **Allowed Skills**: `create-lead`, `book-meeting`.
 - **Session Type**: loop session.
-- **Guarantee**: Returns persistence payload (`response`, `profiles`, `profileDetails`, English persistence fields) consumed by runtime `update-session`.
+- **Guarantee**: Returns persistence payload (`response`, `profiles`, `profileDetails`, `contactInformation`, English persistence fields) consumed by runtime `update-session`.
 - **Continuity Rule**: Conversation progression is encoded directly in orchestrator-authored `profileDetails`; runtime does not synthesize flow fields.
 
 ## Skill: create-lead

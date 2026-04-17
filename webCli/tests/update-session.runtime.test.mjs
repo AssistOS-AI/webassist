@@ -19,6 +19,9 @@ test('update-session.runtime writes and appends the structured session file', as
         agentResponse: 'Hi there!',
         profiles: ['Developer.md'],
         profileDetails: ['Understands the API basics'],
+        contactInformation: {
+            name: 'Alex Builder',
+        },
     });
 
     assert.equal(firstResult.success, true);
@@ -29,9 +32,14 @@ test('update-session.runtime writes and appends the structured session file', as
         agentResponse: 'Happy to help.\nCan you share your timeline?',
         profiles: ['Developer.md', 'Developer.md', 'EnterpriseClient.md'],
         profileDetails: ['Understands the API basics', 'Urgent integration timeline'],
+        contactInformation: {
+            email: 'alex@example.com',
+        },
     });
 
     assert.equal(secondResult.success, true);
+    assert.equal(secondResult.session.contactInformation.name, 'Alex Builder');
+    assert.equal(secondResult.session.contactInformation.email, 'alex@example.com');
 
     const profileContent = await fs.readFile(
         path.join(sandbox.dataDir, 'sessions', `${getSessionProfileFileName('test-session-1')}.md`),
@@ -46,6 +54,9 @@ test('update-session.runtime writes and appends the structured session file', as
     assert.match(profileContent, /- Developer\.md/);
     assert.match(profileContent, /- EnterpriseClient\.md/);
     assert.match(profileContent, /- Urgent integration timeline/);
+    assert.match(profileContent, /### 3\. Contact Information/);
+    assert.match(profileContent, /- \*\*name\*\*: Alex Builder/);
+    assert.match(profileContent, /- \*\*email\*\*: alex@example\.com/);
     assert.match(historyContent, /### 1\. History/);
     assert.match(historyContent, /- \*\*User\*\*: Hello/);
     assert.match(historyContent, /- \*\*User\*\*: Need API help/);

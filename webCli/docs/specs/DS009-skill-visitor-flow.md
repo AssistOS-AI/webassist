@@ -26,12 +26,15 @@ The runtime sends a prompt containing a JSON payload:
 ## Orchestration Contract
 1. Read context from runtime-provided input (`context` object in prompt JSON).
    - Use `currentLeadState` as source of truth for existing lead data tied to `sessionId`.
-2. Build an internal decision object (response draft, profiles, profileDetails).
+2. Build an internal decision object (response draft, profiles, profileDetails, contactInformation).
 3. Ensure decision constraints:
    - use only profiles defined in `combinedProfilesInfo` as qualification candidates;
    - evaluate profile matching through multi-turn questioning;
    - profile filenames in `profiles`;
    - `profileDetails` and lead summary in English;
+   - `contactInformation` is structured key-value data with explicit user-provided fields (no fixed schema);
+   - visitor full name is requested during qualification; when missing, this is explicitly noted in `profileDetails`;
+   - at least one direct contact channel should be collected when available (for example email, phone, social profile, or equivalent);
    - `profileDetails` captures conversation essence relevant to profiling and progression, not transcript copy;
    - `profileDetails` must include what the agent asked, what the user answered, pending questions, and profile-relevant discussed aspects;
    - if no profile matches after multiple attempts, switch to dismissive mode (website-only answers, no profiling questions) until new profile-relevant evidence appears;
@@ -56,5 +59,6 @@ The orchestrator must end with a JSON object containing:
 - `agentResponseEnglish`
 - `profiles`
 - `profileDetails`
+- `contactInformation`
 
 This payload is normalized by `webCli/src/WebCliAgent.mjs`; runtime `update-session` persists and appends `session` in the final response returned to callers.

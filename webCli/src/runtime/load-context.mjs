@@ -45,7 +45,12 @@ export async function loadContext({ sessionId }) {
     const sessionLeadFileName = getSessionLeadFileName(sessionId);
     let sessionRecord = null;
     let currentLeadState = null;
-    const emptyRecord = { profiles: [], profileDetails: [], history: [] };
+    const emptyRecord = {
+        profiles: [],
+        profileDetails: [],
+        contactInformation: {},
+        history: [],
+    };
     const readSectionMap = async (type, fileName) => {
         try {
             return await store.getSectionMap(type, fileName);
@@ -73,6 +78,7 @@ export async function loadContext({ sessionId }) {
             parsed: {
                 profiles: store.parseList(profileRecord?.sections?.[SESSION_SECTIONS.PROFILE]),
                 profileDetails: store.parseList(profileRecord?.sections?.[SESSION_SECTIONS.PROFILE_DETAILS]),
+                contactInformation: store.parseKeyValue(profileRecord?.sections?.[SESSION_SECTIONS.CONTACT_INFORMATION]),
                 history: [],
             },
         };

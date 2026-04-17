@@ -18,6 +18,10 @@ test('load-context.runtime loads info, profile definitions, and parsed session s
         agentResponse: 'We provide API integrations for product teams.',
         profiles: ['Developer.md'],
         profileDetails: ['Asked about API integrations'],
+        contactInformation: {
+            name: 'Session One',
+            email: 'sess1@example.com',
+        },
     });
     await createLeadAction({
         promptText: JSON.stringify({
@@ -37,6 +41,8 @@ test('load-context.runtime loads info, profile definitions, and parsed session s
     assert.equal(result.currentSessionState.isNewSession, false);
     assert.deepEqual(result.currentSessionState.profiles, ['Developer.md']);
     assert.deepEqual(result.currentSessionState.profileDetails, ['Asked about API integrations']);
+    assert.equal(result.currentSessionState.contactInformation.name, 'Session One');
+    assert.equal(result.currentSessionState.contactInformation.email, 'sess1@example.com');
     assert.deepEqual(result.currentSessionState.history, []);
     assert.equal(result.currentLeadState.exists, true);
     assert.equal(result.currentLeadState.leadId, 'sess1-lead.md');
@@ -52,6 +58,7 @@ test('load-context.runtime loads info, profile definitions, and parsed session s
         sessionId: 'new-session',
     });
     assert.equal(missingSessionResult.currentSessionState.isNewSession, true);
+    assert.deepEqual(missingSessionResult.currentSessionState.contactInformation, {});
     assert.equal(missingSessionResult.currentLeadState.exists, false);
     assert.match(
         missingSessionResult.currentSessionStateText,

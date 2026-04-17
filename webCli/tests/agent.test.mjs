@@ -61,6 +61,10 @@ class FakeWebCliLLM extends LLMAgent {
                 agentResponseEnglish: 'Sure — we can help with API integration. Below you can find the scheduling link.',
                 profiles: ['Developer.md'],
                 profileDetails: ['Evaluating an API integration', 'Provided email address'],
+                contactInformation: {
+                    name: 'Alice Example',
+                    email: 'alice@example.com',
+                },
             }),
             reason: 'Return final runtime payload.',
         };
@@ -89,6 +93,8 @@ test('webCli agent loads AchillesAgentLib and executes a full visitor turn', asy
     assert.equal(result.success, true);
     assert.match(result.response, /integrarea API-ului/);
     assert.deepEqual(result.profiles, ['Developer.md']);
+    assert.equal(result.contactInformation.name, 'Alice Example');
+    assert.equal(result.contactInformation.email, 'alice@example.com');
     assert.equal('lead' in result, false);
     assert.equal('meeting' in result, false);
     assert.ok(llmAgent.calls.length >= 3);
@@ -111,6 +117,9 @@ test('webCli agent loads AchillesAgentLib and executes a full visitor turn', asy
     assert.match(sessionProfileContent, /- Developer\.md/);
     assert.match(sessionProfileContent, /Evaluating an API integration/);
     assert.match(sessionProfileContent, /Provided email address/);
+    assert.match(sessionProfileContent, /### 3\. Contact Information/);
+    assert.match(sessionProfileContent, /- \*\*name\*\*: Alice Example/);
+    assert.match(sessionProfileContent, /- \*\*email\*\*: alice@example\.com/);
     assert.match(sessionHistoryContent, /Hello, I want to integrate your API/);
     assert.match(sessionHistoryContent, /Below you can find the scheduling link/);
 });

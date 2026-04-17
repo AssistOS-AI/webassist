@@ -20,7 +20,7 @@ To define the current automated test coverage for `webCli`, including the behavi
 - Verifies end-to-end visitor turn handling through `createWebCliAgent(...).handleMessage(...)`.
 - Confirms Achilles library import from `node_modules` via `achillesAgentLib` package resolution.
 - Confirms runtime delegation through `RecursiveSkilledAgent.executePrompt(...)` and orchestrator-driven tool routing.
-- Verifies lead persistence and session persistence with expected markdown sections and content.
+- Verifies lead persistence and session persistence with expected markdown sections and content, including session `Contact Information`.
 
 ### 2) `load-context.runtime.test.mjs`
 - Verifies loading of `info/` and `profilesInfo/` markdown context.
@@ -33,6 +33,7 @@ To define the current automated test coverage for `webCli`, including the behavi
 - Verifies creation of a session file when absent.
 - Verifies appending `User` and `Agent` history entries in order.
 - Verifies profile and profile-details list updates with de-duplication.
+- Verifies contact information merge and persistence under session profile `Contact Information` section.
 - Verifies markdown structure compliance with DS001 headings.
 
 ### 4) `profile-flow-synthesis.test.mjs`

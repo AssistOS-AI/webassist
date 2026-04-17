@@ -9,13 +9,15 @@ export const DATASTORE_TYPES = {
 export const SESSION_SECTIONS = {
     PROFILE: 'Profile',
     PROFILE_DETAILS: 'Profile Details',
+    CONTACT_INFORMATION: 'Contact Information',
     HISTORY: 'History',
 };
 
 export const SESSION_SECTION_INDEX = {
     PROFILE: 1,
     PROFILE_DETAILS: 2,
-    HISTORY: 3,
+    CONTACT_INFORMATION: 3,
+    HISTORY: 1,
 };
 
 export const SESSION_FILE_SUFFIX = {

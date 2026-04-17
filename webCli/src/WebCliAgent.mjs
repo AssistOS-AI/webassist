@@ -100,6 +100,7 @@ function normalizeRuntimeResult(executionResult, fallbackSessionId) {
         agentResponseEnglish,
         profiles: uniqueStrings(payload.profiles),
         profileDetails: uniqueStrings(payload.profileDetails),
+        contactInformation: payload.contactInformation,
         ...(lead ? { lead } : {}),
         ...(meeting ? { meeting } : {}),
     };
@@ -173,6 +174,7 @@ export async function createWebCliAgent({
                 agentResponse: normalized.agentResponseEnglish,
                 profiles: normalized.profiles,
                 profileDetails: normalized.profileDetails,
+                contactInformation: normalized.contactInformation,
             });
 
             return {
@@ -181,6 +183,7 @@ export async function createWebCliAgent({
                 response: normalized.response,
                 profiles: normalized.profiles,
                 profileDetails: normalized.profileDetails,
+                contactInformation: normalized.contactInformation,
                 ...(normalized.lead ? { lead: normalized.lead } : {}),
                 ...(normalized.meeting ? { meeting: normalized.meeting } : {}),
                 session: sessionResult.session,

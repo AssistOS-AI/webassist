@@ -43,6 +43,17 @@ This section is the continuity memory source loaded by runtime for future turns.
   - what the user answered,
   - pending clarifications and qualification-relevant discussed aspects.
 
+#### 3. Contact Information
+Structured key-value contact memory for the current visitor session.
+
+Schema:
+- no hardcoded key list; orchestrator stores explicit key-value contact facts provided by the visitor.
+- visitor full name is mandatory to request during qualification; when missing, this is recorded in `Profile Details`.
+
+Contact rule:
+- keep at least one direct contact channel when available (for example email, phone, social profile, or equivalent);
+- only explicit user-provided values are persisted.
+
 ### History file (`{sessionId}-history.md`)
 #### 1. History
 A chronological log of the interaction:

@@ -41,6 +41,10 @@ class FakeFlowSynthesisLLM extends LLMAgent {
                         'The user did not answer the question about available datasets and student resources.',
                         'The user is asked about project timeline and expected outcomes. His/her next reply should answer the question.',
                     ],
+                    contactInformation: {
+                        name: 'Research Visitor',
+                        email: 'research.visitor@example.com',
+                    },
                 }),
                 reason: 'Return second turn payload.',
             };
@@ -59,6 +63,9 @@ class FakeFlowSynthesisLLM extends LLMAgent {
                     'Interested in research collaboration',
                     'The user is asked about available datasets and student resources. His/her next reply should answer the question.',
                 ],
+                contactInformation: {
+                    name: 'Research Visitor',
+                },
             }),
             reason: 'Return first turn payload.',
         };
@@ -81,6 +88,7 @@ test('webCli persists orchestrator-authored conversation memory inside profile d
     });
 
     assert.deepEqual(firstTurn.profiles, ['Researcher.md']);
+    assert.equal(firstTurn.contactInformation.name, 'Research Visitor');
     assert.ok(firstTurn.profileDetails.includes('The user is asked about available datasets and student resources. His/her next reply should answer the question.'));
 
     const secondTurn = await agent.handleMessage({
@@ -90,6 +98,7 @@ test('webCli persists orchestrator-authored conversation memory inside profile d
 
     assert.ok(secondTurn.profileDetails.includes('The user did not answer the question about available datasets and student resources.'));
     assert.ok(secondTurn.profileDetails.includes('The user is asked about project timeline and expected outcomes. His/her next reply should answer the question.'));
+    assert.equal(secondTurn.contactInformation.email, 'research.visitor@example.com');
 
     const profilePath = path.join(sandbox.dataDir, 'sessions', `${getSessionProfileFileName('session-flow-1')}.md`);
     const historyPath = path.join(sandbox.dataDir, 'sessions', `${getSessionHistoryFileName('session-flow-1')}.md`);
@@ -98,6 +107,8 @@ test('webCli persists orchestrator-authored conversation memory inside profile d
 
     assert.match(profileContent, /The user did not answer the question about available datasets and student resources\./);
     assert.match(profileContent, /The user is asked about project timeline and expected outcomes\./);
+    assert.match(profileContent, /- \*\*name\*\*: Research Visitor/);
+    assert.match(profileContent, /- \*\*email\*\*: research\.visitor@example\.com/);
     assert.match(historyContent, /Can we collaborate on AI research\?/);
     assert.match(historyContent, /I can share some papers later\./);
 });
