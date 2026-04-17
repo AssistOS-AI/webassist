@@ -23,12 +23,18 @@ export const SESSION_FILE_SUFFIX = {
     HISTORY: 'history',
 };
 
+export const LEAD_FILE_SUFFIX = 'lead';
+
 export function getSessionProfileFileName(sessionId) {
     return `${sessionId}-${SESSION_FILE_SUFFIX.PROFILE}`;
 }
 
 export function getSessionHistoryFileName(sessionId) {
     return `${sessionId}-${SESSION_FILE_SUFFIX.HISTORY}`;
+}
+
+export function getSessionLeadFileName(sessionId) {
+    return `${sessionId}-${LEAD_FILE_SUFFIX}`;
 }
 
 export const LEAD_SECTIONS = {

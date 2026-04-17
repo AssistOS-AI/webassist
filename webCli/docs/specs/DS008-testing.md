@@ -25,6 +25,7 @@ To define the current automated test coverage for `webCli`, including the behavi
 ### 2) `load-context.runtime.test.mjs`
 - Verifies loading of `info/` and `profilesInfo/` markdown context.
 - Verifies session state parsing for existing and new sessions using profile file memory.
+- Verifies deterministic lead state loading for `sessionId` (`currentLeadState`).
 - Verifies session history is not loaded into orchestration context.
 - Verifies normalized context payload structure returned by runtime module.
 
@@ -35,9 +36,9 @@ To define the current automated test coverage for `webCli`, including the behavi
 - Verifies markdown structure compliance with DS001 headings.
 
 ### 4) `profile-flow-synthesis.test.mjs`
-- Verifies runtime synthesis of conversational flow lines inside `Profile Details`.
-- Verifies unanswered pending questions produce deterministic English continuity lines.
-- Verifies history continues to be persisted on disk while continuity is carried by profile details.
+- Verifies orchestrator-authored conversation-memory details are persisted in `Profile Details`.
+- Verifies continuity across turns is preserved through profile details (without runtime flow synthesis fields).
+- Verifies history continues to be persisted on disk while orchestration context loads profile memory only.
 
 ### 5) `create-lead.test.mjs`
 - Verifies deterministic lead filename generation from `sessionId`.
@@ -47,6 +48,7 @@ To define the current automated test coverage for `webCli`, including the behavi
 
 ### 6) `book-meeting.test.mjs`
 - Verifies successful config aggregation from `data/config/`.
+- Verifies deterministic failure when current session has no lead.
 - Verifies error behavior when no configuration is available.
 - Verifies output contract used by the runtime response phase.
 

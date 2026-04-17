@@ -35,13 +35,12 @@ class FakeFlowSynthesisLLM extends LLMAgent {
                     userMessageEnglish: 'I can share some papers later.',
                     agentResponseEnglish: 'Thanks. I still need one detail: what project timeline and expected outcomes do you have?',
                     profiles: ['Researcher.md'],
-                    profileDetails: ['Interested in research collaboration', 'Open to academic-industry partnerships'],
-                    flow: {
-                        answeredPendingQuestion: false,
-                        pendingQuestionTopic: 'project timeline and expected outcomes',
-                    },
-                    lead: { shouldCreate: false },
-                    meeting: { shouldOffer: false },
+                    profileDetails: [
+                        'Interested in research collaboration',
+                        'Open to academic-industry partnerships',
+                        'The user did not answer the question about available datasets and student resources.',
+                        'The user is asked about project timeline and expected outcomes. His/her next reply should answer the question.',
+                    ],
                 }),
                 reason: 'Return second turn payload.',
             };
@@ -56,20 +55,17 @@ class FakeFlowSynthesisLLM extends LLMAgent {
                 userMessageEnglish: 'Can we collaborate on AI research?',
                 agentResponseEnglish: 'Great. What available datasets and student resources can you provide for collaboration?',
                 profiles: ['Researcher.md'],
-                profileDetails: ['Interested in research collaboration'],
-                flow: {
-                    answeredPendingQuestion: true,
-                    pendingQuestionTopic: 'available datasets and student resources',
-                },
-                lead: { shouldCreate: false },
-                meeting: { shouldOffer: false },
+                profileDetails: [
+                    'Interested in research collaboration',
+                    'The user is asked about available datasets and student resources. His/her next reply should answer the question.',
+                ],
             }),
             reason: 'Return first turn payload.',
         };
     }
 }
 
-test('webCli synthesizes conversational flow inside profile details and keeps history persisted on disk', async (t) => {
+test('webCli persists orchestrator-authored conversation memory inside profile details and keeps history on disk', async (t) => {
     const sandbox = await createWebCliSandbox();
     t.after(async () => sandbox.cleanup());
 

@@ -1,7 +1,12 @@
 import {
     getDataStore,
 } from '../../../src/runtime/dataStore.mjs';
-import { DATASTORE_TYPES } from '../../../src/constants/datastore.mjs';
+import {
+    DATASTORE_TYPES,
+    getSessionLeadFileName,
+} from '../../../src/constants/datastore.mjs';
+
+const MISSING_LEAD_ERROR = 'the current session user does not have a lead! check if user is qualified for a lead then create it';
 
 function combineMarkdownFiles(files, label) {
     return files
@@ -31,6 +36,16 @@ export async function action({ promptText }) {
     }
 
     const store = getDataStore();
+    const leadFileName = getSessionLeadFileName(sessionId);
+    try {
+        await store.getSectionMap(DATASTORE_TYPES.LEADS, leadFileName);
+    } catch (error) {
+        if (error && error.code === 'ENOENT') {
+            throw new Error(MISSING_LEAD_ERROR);
+        }
+        throw error;
+    }
+
     const listing = await store.listFiles(DATASTORE_TYPES.CONFIG);
     const configFiles = await Promise.all(
         listing.files.map(async (itemName) => {

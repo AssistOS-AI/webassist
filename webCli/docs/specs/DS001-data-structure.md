@@ -38,9 +38,10 @@ A structured list of important facts and conversational state extracted from the
 
 This section is the continuity memory source loaded by runtime for future turns. It must include:
 - stable visitor facts (industry, intent, constraints, readiness);
-- flow markers synthesized in English when needed:
-  - `The user is asked about ... His/her next reply should answer the question.`
-  - `The user did not answer the question about ...`
+- concise conversation-memory notes authored by orchestrator in English, including:
+  - what the agent asked,
+  - what the user answered,
+  - pending clarifications and qualification-relevant discussed aspects.
 
 ### History file (`{sessionId}-history.md`)
 #### 1. History
@@ -49,3 +50,8 @@ A chronological log of the interaction:
 - **Agent**: [Response text]
 
 History remains persisted for audit and admin-side analysis, but it is not loaded into webCli orchestration context during runtime turns.
+
+## Lead File Lookup Rule
+- Lead files are deterministic per session: `{sessionId}-lead.md` in `leads/`.
+- Runtime `load-context` resolves this file and exposes `currentLeadState` to orchestrator.
+- Meeting scheduling decisions must rely on `currentLeadState.exists` rather than profile-detail markers.

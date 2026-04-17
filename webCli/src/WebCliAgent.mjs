@@ -26,63 +26,6 @@ function uniqueStrings(values) {
     return result;
 }
 
-const FLOW_ASKED_REGEX = /^The user is asked about\s+(.+?)\.\s+His\/her next reply should answer the question\.?$/i;
-const FLOW_UNANSWERED_REGEX = /^The user did not answer the question about\s+(.+?)\.?$/i;
-
-function isFlowStatusLine(value) {
-    if (typeof value !== 'string') {
-        return false;
-    }
-    const normalized = value.trim();
-    return FLOW_ASKED_REGEX.test(normalized) || FLOW_UNANSWERED_REGEX.test(normalized);
-}
-
-function normalizeFlowTopic(value) {
-    const normalized = String(value ?? '').trim().replace(/[.\s]+$/g, '');
-    return normalized;
-}
-
-function extractPendingQuestionTopic(profileDetails) {
-    const values = Array.isArray(profileDetails) ? profileDetails : [];
-    for (let index = values.length - 1; index >= 0; index -= 1) {
-        const entry = String(values[index] ?? '').trim();
-        const match = entry.match(FLOW_ASKED_REGEX);
-        if (match && match[1]) {
-            const topic = normalizeFlowTopic(match[1]);
-            if (topic) {
-                return topic;
-            }
-        }
-    }
-    return '';
-}
-
-function buildAskedFlowLine(topic) {
-    return `The user is asked about ${topic}. His/her next reply should answer the question.`;
-}
-
-function buildUnansweredFlowLine(topic) {
-    return `The user did not answer the question about ${topic}.`;
-}
-
-function synthesizeProfileDetails({ currentProfileDetails, payloadProfileDetails, flow }) {
-    const stableExistingDetails = uniqueStrings(currentProfileDetails).filter((value) => !isFlowStatusLine(value));
-    const nextPayloadDetails = uniqueStrings(payloadProfileDetails).filter((value) => !isFlowStatusLine(value));
-    const nextProfileDetails = uniqueStrings([...stableExistingDetails, ...nextPayloadDetails]);
-    const previousPendingQuestionTopic = extractPendingQuestionTopic(currentProfileDetails);
-
-    if (previousPendingQuestionTopic && flow.answeredPendingQuestion === false) {
-        nextProfileDetails.push(buildUnansweredFlowLine(previousPendingQuestionTopic));
-    }
-
-    const pendingQuestionTopic = normalizeFlowTopic(flow.pendingQuestionTopic);
-    if (pendingQuestionTopic) {
-        nextProfileDetails.push(buildAskedFlowLine(pendingQuestionTopic));
-    }
-
-    return uniqueStrings(nextProfileDetails);
-}
-
 function buildBaseAgentOptions({ agentRoot, llmAgent, logger, sessionConfig, recursiveAgentOptions }) {
     const explicitSkillRoot = path.join(agentRoot, 'skills');
     const requestedSkillRoots = Array.isArray(recursiveAgentOptions?.additionalSkillRoots)
@@ -142,16 +85,12 @@ function normalizeRuntimeResult(executionResult, fallbackSessionId) {
         throw new Error('webCli orchestrator result must include a sessionId.');
     }
 
-    const flow = payload.flow;
-    if (!flow || typeof flow !== 'object' || Array.isArray(flow)) {
-        throw new Error('webCli orchestrator result must include a flow object.');
-    }
-    if (typeof flow.answeredPendingQuestion !== 'boolean') {
-        throw new Error('webCli orchestrator flow must include answeredPendingQuestion as boolean.');
-    }
-    const pendingQuestionTopic = typeof flow.pendingQuestionTopic === 'string'
-        ? flow.pendingQuestionTopic.trim()
-        : '';
+    const lead = payload.lead && typeof payload.lead === 'object' && !Array.isArray(payload.lead)
+        ? payload.lead
+        : undefined;
+    const meeting = payload.meeting && typeof payload.meeting === 'object' && !Array.isArray(payload.meeting)
+        ? payload.meeting
+        : undefined;
 
     return {
         success: payload.success !== false,
@@ -161,16 +100,8 @@ function normalizeRuntimeResult(executionResult, fallbackSessionId) {
         agentResponseEnglish,
         profiles: uniqueStrings(payload.profiles),
         profileDetails: uniqueStrings(payload.profileDetails),
-        flow: {
-            answeredPendingQuestion: flow.answeredPendingQuestion,
-            pendingQuestionTopic,
-        },
-        lead: payload.lead && typeof payload.lead === 'object'
-            ? payload.lead
-            : { shouldCreate: false },
-        meeting: payload.meeting && typeof payload.meeting === 'object'
-            ? payload.meeting
-            : { shouldOffer: false },
+        ...(lead ? { lead } : {}),
+        ...(meeting ? { meeting } : {}),
     };
 }
 
@@ -235,18 +166,13 @@ export async function createWebCliAgent({
             });
 
             const normalized = normalizeRuntimeResult(execution, sessionId);
-            const synthesizedProfileDetails = synthesizeProfileDetails({
-                currentProfileDetails: context?.currentSessionState?.profileDetails,
-                payloadProfileDetails: normalized.profileDetails,
-                flow: normalized.flow,
-            });
 
             const sessionResult = await updateSession({
                 sessionId: normalized.sessionId,
                 userMessage: normalized.userMessageEnglish,
                 agentResponse: normalized.agentResponseEnglish,
                 profiles: normalized.profiles,
-                profileDetails: synthesizedProfileDetails,
+                profileDetails: normalized.profileDetails,
             });
 
             return {
@@ -254,9 +180,9 @@ export async function createWebCliAgent({
                 sessionId: normalized.sessionId,
                 response: normalized.response,
                 profiles: normalized.profiles,
-                profileDetails: synthesizedProfileDetails,
-                lead: normalized.lead,
-                meeting: normalized.meeting,
+                profileDetails: normalized.profileDetails,
+                ...(normalized.lead ? { lead: normalized.lead } : {}),
+                ...(normalized.meeting ? { meeting: normalized.meeting } : {}),
                 session: sessionResult.session,
             };
         },

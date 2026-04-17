@@ -25,23 +25,27 @@ The runtime sends a prompt containing a JSON payload:
 
 ## Orchestration Contract
 1. Read context from runtime-provided input (`context` object in prompt JSON).
-2. Build an internal decision object (response draft, profiles, profileDetails, flow, lead, meeting).
+   - Use `currentLeadState` as source of truth for existing lead data tied to `sessionId`.
+2. Build an internal decision object (response draft, profiles, profileDetails).
 3. Ensure decision constraints:
+   - use only profiles defined in `combinedProfilesInfo` as qualification candidates;
+   - evaluate profile matching through multi-turn questioning;
    - profile filenames in `profiles`;
    - `profileDetails` and lead summary in English;
-   - `flow.answeredPendingQuestion` as boolean and `flow.pendingQuestionTopic` in English text or empty string;
-   - `profileDetails` captures stable visitor facts, not full transcript copy;
-   - lead only when value + contact info;
-   - meeting only for explicit human-contact ask;
+   - `profileDetails` captures conversation essence relevant to profiling and progression, not transcript copy;
+   - `profileDetails` must include what the agent asked, what the user answered, pending questions, and profile-relevant discussed aspects;
+   - if no profile matches after multiple attempts, switch to dismissive mode (website-only answers, no profiling questions) until new profile-relevant evidence appears;
+   - lead is created only when a profile matches, that profile qualifying criteria are satisfied by `profileDetails`, and explicit contact info exists;
+   - meeting config is loaded only for explicit human-contact ask when `currentLeadState.exists` is true;
    - when info is missing, answer current question and ask exactly one strategic follow-up question.
 4. Optionally create/update lead via `create-lead`.
-5. Optionally load owner meeting config via `book-meeting`.
+5. Optionally load owner meeting config via `book-meeting` only after lead existence is confirmed in `currentLeadState`.
 6. Build final visitor response in visitor language.
 7. Translate both messages to English for persistence (preserve intent/facts, concise, no added info).
 8. Return a final JSON payload through `final_answer`.
 
 ## Runtime Continuity Rule
-`webCli` runtime synthesizes continuity markers into profile details based on `flow` output and previous session profile details. History files remain persisted for audit, but orchestration continuity relies on profile details.
+`webCli` runtime does not synthesize flow markers. Conversational continuity is authored directly by orchestrator through `profileDetails`. History files remain persisted for audit and admin consumers.
 
 ## Output Contract
 The orchestrator must end with a JSON object containing:
@@ -52,8 +56,5 @@ The orchestrator must end with a JSON object containing:
 - `agentResponseEnglish`
 - `profiles`
 - `profileDetails`
-- `flow`
-- `lead`
-- `meeting`
 
 This payload is normalized by `webCli/src/WebCliAgent.mjs`; runtime `update-session` persists and appends `session` in the final response returned to callers.

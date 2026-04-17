@@ -1,11 +1,12 @@
 import {
     getDataStore,
 } from '../../../src/runtime/dataStore.mjs';
-import { DATASTORE_TYPES, LEAD_FIELDS, LEAD_SECTIONS } from '../../../src/constants/datastore.mjs';
-
-function createLeadFileName(sessionId) {
-    return `${sessionId}-lead`;
-}
+import {
+    DATASTORE_TYPES,
+    LEAD_FIELDS,
+    LEAD_SECTIONS,
+    getSessionLeadFileName,
+} from '../../../src/constants/datastore.mjs';
 
 function normalizeLeadId(leadId) {
     const normalized = String(leadId ?? '').trim();
@@ -63,7 +64,7 @@ export async function action({ promptText }) {
 
     const normalizedContactInfo = normalizeContactInfo(contactInfo);
     const store = getDataStore();
-    const leadId = `${createLeadFileName(sessionId)}.md`;
+    const leadId = `${getSessionLeadFileName(sessionId)}.md`;
     const normalizedLeadId = normalizeLeadId(leadId);
     const timestamp = toIsoTimestamp();
 

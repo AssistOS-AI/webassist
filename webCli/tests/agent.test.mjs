@@ -61,20 +61,6 @@ class FakeWebCliLLM extends LLMAgent {
                 agentResponseEnglish: 'Sure — we can help with API integration. Below you can find the scheduling link.',
                 profiles: ['Developer.md'],
                 profileDetails: ['Evaluating an API integration', 'Provided email address'],
-                flow: {
-                    answeredPendingQuestion: true,
-                    pendingQuestionTopic: 'implementation timeline and integration constraints',
-                },
-                lead: {
-                    shouldCreate: true,
-                    success: true,
-                    created: true,
-                    leadId: `${sessionId}-lead.md`,
-                },
-                meeting: {
-                    shouldOffer: true,
-                    configData: 'Calendar link: https://cal.example.com/webassist-demo',
-                },
             }),
             reason: 'Return final runtime payload.',
         };
@@ -103,9 +89,8 @@ test('webCli agent loads AchillesAgentLib and executes a full visitor turn', asy
     assert.equal(result.success, true);
     assert.match(result.response, /integrarea API-ului/);
     assert.deepEqual(result.profiles, ['Developer.md']);
-    assert.equal(result.lead.shouldCreate, true);
-    assert.equal(result.lead.leadId, 'visitor-42-lead.md');
-    assert.equal(result.meeting.shouldOffer, true);
+    assert.equal('lead' in result, false);
+    assert.equal('meeting' in result, false);
     assert.ok(llmAgent.calls.length >= 3);
 
     const leadContent = await fs.readFile(
@@ -124,7 +109,8 @@ test('webCli agent loads AchillesAgentLib and executes a full visitor turn', asy
         'utf8'
     );
     assert.match(sessionProfileContent, /- Developer\.md/);
-    assert.match(sessionProfileContent, /The user is asked about implementation timeline and integration constraints\./);
+    assert.match(sessionProfileContent, /Evaluating an API integration/);
+    assert.match(sessionProfileContent, /Provided email address/);
     assert.match(sessionHistoryContent, /Hello, I want to integrate your API/);
     assert.match(sessionHistoryContent, /Below you can find the scheduling link/);
 });

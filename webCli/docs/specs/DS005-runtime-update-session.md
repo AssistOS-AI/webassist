@@ -27,10 +27,10 @@ Persist the current visitor turn after orchestration completes, so session state
 3. Write profile state to `data/sessions/{sessionId}-profile.md`.
 4. Append current user/agent history entries to `data/sessions/{sessionId}-history.md`.
 
-## Flow Synthesis Invariant
-- Flow continuity lines are synthesized by runtime orchestration normalization before `update-session` is invoked.
+## Continuity Invariant
+- `update-session` persists `profileDetails` exactly as provided by orchestrator payload (after de-duplication).
 - Runtime keeps history persisted on disk but does not depend on history loading for conversational continuity.
-- Continuity is synthesized into `Profile Details` and persisted in the profile file.
+- Conversational continuity is encoded in `Profile Details` by orchestrator instructions.
 
 ## Datastore Source
 - `update-session` uses the datastore singleton configured at agent startup.

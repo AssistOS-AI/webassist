@@ -12,10 +12,22 @@ This skill is implemented as a **cskill** and called by `visitor-flow` for highl
 - **Inputs**:
   - `sessionId` (string): The ID of the current session.
 
+## Orchestrator Input Sources
+- `sessionId`: from turn input.
+- No additional user-derived parameters are required for this skill.
+
 ## Output
 The tool returns a string containing the content of the config files in `data/config/` (such as `owner.md`), which includes the necessary links or emails.
+
+## Preconditions
+- A lead file for the current `sessionId` must already exist at `data/leads/{sessionId}-lead.md`.
+- If no lead exists, the skill fails with the exact message:
+  - `the current session user does not have a lead! check if user is qualified for a lead then create it`
 
 ## Execution Logic (Node.js)
 1. Read the `data/config/` directory.
 2. Concatenate the contents of the files found in that directory (e.g., `owner.md`).
 3. Return the content so the LLM can use it to formulate a natural response offering the calendar link to the user.
+
+## Invocation Rule
+- `visitor-flow` calls this skill only when the visitor explicitly asks to talk/meet/book with a human and lead existence is confirmed from `currentLeadState`.

@@ -11,9 +11,15 @@ This skill is implemented as a **cskill** and called by `visitor-flow` when lead
 - **Description**: Creates or updates a lead file in the system. The tool parses contact details and profile traits, writing a file that represents a solid lead.
 - **Inputs**:
   - `sessionId` (string): The current session ID (used as part of the filename or reference).
-  - `contactInfo` (object): Key-value pairs for the extracted contact data (e.g. `{"email": "...", "phone": "...", "name": "..."}`).
+  - `contactInfo` (object): Key-value pairs for explicit contact data provided by the visitor (e.g. `{"email": "...", "phone": "...", "name": "..."}`).
   - `profile` (string): The single most relevant profile name from `profilesInfo/` that this lead matches (e.g., "Developer").
   - `summary` (string): A short summary explaining why this lead is valuable.
+
+## Orchestrator Input Sources
+- `sessionId`: from turn input.
+- `contactInfo`: from explicit visitor statements only (never inferred).
+- `profile`: derived from selected profile filename by removing `.md`.
+- `summary`: synthesized from profile-relevant facts and conversation-memory details already present in `profileDetails`.
 
 ## File Generation Format
 The tool uses a deterministic file named `{sessionId}-lead.md` inside `data/leads/`.

@@ -17,7 +17,8 @@ The **webCli** agent is implemented as a Node.js CLI tool with a single `session
 ## MCP Contract Integration
 - **Configuration File**: `webCli/mcp-config.json`
 - **Tool Entry**: `web_cli_chat`
-- **Command Target**: `webCli/src/index.mjs`
+- **Command Target**: `/code/src/index.mjs`
+- **Container Path Note**: Ploinky mounts agent code at `/code` inside the runtime container, so repo path `webCli/src/index.mjs` maps to container path `/code/src/index.mjs` for MCP execution.
 - **Execution Mode**: MCP requests are routed as single-shot invocations equivalent to CLI `-mcp` behavior.
 - **Input Parameters**: MCP input schema mirrors CLI runtime parameters:
   - `message` ↔ positional `<message>`
