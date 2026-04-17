@@ -1,0 +1,13 @@
+{
+    "pluginCategory": "application",
+    "id": "webcli-chat",
+    "component": "webcli-global-chat",
+    "location": ["file-exp:global"],
+    "label": "WebCli Chat",
+    "tooltip": "Open WebCli chat",
+    "icon": "./icon.svg",
+    "presenter": "WebCliGlobalChat",
+    "type": "global",
+    "autoPin": true,
+    "dependencies": []
+}

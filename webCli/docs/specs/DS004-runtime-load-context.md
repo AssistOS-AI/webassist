@@ -21,8 +21,13 @@ Load all visitor-turn context before orchestration starts, so the agentic loop r
 ## Execution Logic
 1. Read markdown files from `data/info/`.
 2. Read markdown files from `data/profilesInfo/`.
-3. Read and parse `data/sessions/{sessionId}-profile.md` and `data/sessions/{sessionId}-history.md` if they exist.
+3. Read and parse `data/sessions/{sessionId}-profile.md` if it exists.
 4. Return both structured and combined-text context used by the orchestrator prompt.
+
+## Session Memory Rule
+- `load-context` must not load session history dialogue from `{sessionId}-history.md`.
+- Session continuity is provided through `Profile` and `Profile Details` from `{sessionId}-profile.md`.
+- History files remain persisted separately by runtime for audit/admin consumers.
 
 ## Datastore Source
 - `load-context` uses the datastore singleton configured at agent startup.

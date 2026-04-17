@@ -4,7 +4,7 @@
             "name": "web_cli_chat",
             "title": "Web CLI Chat",
             "description": "Execute a one-shot webCli request in MCP mode.",
-            "command": "webCli/src/index.mjs -mcp",
+            "command": "/code/src/index.mjs",
             "cwd": "workspace",
             "env": {
                 "TOOL_NAME": "web_cli_chat"

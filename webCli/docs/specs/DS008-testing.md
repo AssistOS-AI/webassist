@@ -24,7 +24,8 @@ To define the current automated test coverage for `webCli`, including the behavi
 
 ### 2) `load-context.runtime.test.mjs`
 - Verifies loading of `info/` and `profilesInfo/` markdown context.
-- Verifies session state parsing for existing and new sessions.
+- Verifies session state parsing for existing and new sessions using profile file memory.
+- Verifies session history is not loaded into orchestration context.
 - Verifies normalized context payload structure returned by runtime module.
 
 ### 3) `update-session.runtime.test.mjs`
@@ -33,18 +34,23 @@ To define the current automated test coverage for `webCli`, including the behavi
 - Verifies profile and profile-details list updates with de-duplication.
 - Verifies markdown structure compliance with DS001 headings.
 
-### 4) `create-lead.test.mjs`
+### 4) `profile-flow-synthesis.test.mjs`
+- Verifies runtime synthesis of conversational flow lines inside `Profile Details`.
+- Verifies unanswered pending questions produce deterministic English continuity lines.
+- Verifies history continues to be persisted on disk while continuity is carried by profile details.
+
+### 5) `create-lead.test.mjs`
 - Verifies deterministic lead filename generation from `sessionId`.
 - Verifies lead file creation with required fields (`Status`, `Profile`, `Session ID`, contact info, summary).
 - Verifies update-in-place behavior when the same lead already exists.
 - Verifies lifecycle field behavior (`createdAt` retained, `updatedAt` refreshed).
 
-### 5) `book-meeting.test.mjs`
+### 6) `book-meeting.test.mjs`
 - Verifies successful config aggregation from `data/config/`.
 - Verifies error behavior when no configuration is available.
 - Verifies output contract used by the runtime response phase.
 
-### 6) MCP eval suite
+### 7) MCP eval suite
 - Located in `webCli/evalsSuite/mcpMode.test.mjs`.
 - Not part of `webCli/tests/runAll.mjs` default run.
 

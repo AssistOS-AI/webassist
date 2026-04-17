@@ -28,9 +28,11 @@ test('load-context.runtime loads info, profile definitions, and parsed session s
     assert.equal(result.currentSessionState.isNewSession, false);
     assert.deepEqual(result.currentSessionState.profiles, ['Developer.md']);
     assert.deepEqual(result.currentSessionState.profileDetails, ['Asked about API integrations']);
+    assert.deepEqual(result.currentSessionState.history, []);
     assert.match(result.combinedSiteInfo, /WebAssist builds AI-assisted websites/);
     assert.match(result.combinedProfilesInfo, /Profile: Developer/);
-    assert.match(result.currentSessionStateText, /Tell me about your API/);
+    assert.doesNotMatch(result.currentSessionStateText, /Tell me about your API/);
+    assert.match(result.currentSessionStateText, /Session Profile/);
 
     const missingSessionResult = await loadContext({
         sessionId: 'new-session',
@@ -38,6 +40,6 @@ test('load-context.runtime loads info, profile definitions, and parsed session s
     assert.equal(missingSessionResult.currentSessionState.isNewSession, true);
     assert.match(
         missingSessionResult.currentSessionStateText,
-        /No previous session history found/
+        /No previous session profile found/
     );
 });

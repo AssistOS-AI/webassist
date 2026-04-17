@@ -1,0 +1,35 @@
+<div class="webcli-global-chat-shell">
+    <button id="webCliChatBubble" class="webcli-chat-bubble" type="button" aria-expanded="false" aria-controls="webCliChatPanel" title="Open WebCli chat">
+        <span class="webcli-chat-bubble-icon" aria-hidden="true">
+            <img class="webcli-chat-bubble-icon-image" src="" alt="">
+        </span>
+        <span class="webcli-chat-bubble-label">WebCli</span>
+    </button>
+
+    <section id="webCliChatPanel" class="webcli-chat-panel" aria-hidden="true">
+        <header class="webcli-chat-header">
+            <div class="webcli-chat-title-group">
+                <span class="webcli-chat-title">WebCli Assistant</span>
+                <span class="webcli-chat-subtitle">Context-aware website chat</span>
+            </div>
+            <div class="webcli-chat-actions">
+                <button id="openWebAdminChat" class="webcli-chat-action" type="button" title="Open WebAdmin webchat" aria-label="Open WebAdmin webchat">
+                    <span aria-hidden="true">Admin</span>
+                </button>
+                <button id="closeWebCliChat" class="webcli-chat-action close" type="button" title="Close WebCli chat" aria-label="Close WebCli chat">
+                    <span aria-hidden="true">X</span>
+                </button>
+            </div>
+        </header>
+        <div class="webcli-chat-frame-wrap">
+            <iframe
+                id="webCliChatFrame"
+                class="webcli-chat-frame"
+                src="/webchat?agent=webCli"
+                title="WebCli chat"
+                loading="lazy"
+                referrerpolicy="strict-origin-when-cross-origin"
+            ></iframe>
+        </div>
+    </section>
+</div>

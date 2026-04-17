@@ -32,11 +32,15 @@ Execution contract:
 3) Using the provided context, produce an internal decision equivalent to this shape:
    {
      "response": "draft visitor-facing reply in visitor language",
-     "profiles": ["ProfileFile.md"],
-     "profileDetails": ["English fact about visitor"],
-     "lead": {
-       "shouldCreate": true,
-       "profile": "ProfileName",
+      "profiles": ["ProfileFile.md"],
+      "profileDetails": ["English fact about visitor"],
+      "flow": {
+        "answeredPendingQuestion": true,
+        "pendingQuestionTopic": "specific topic asked in the current agent response or empty string"
+      },
+      "lead": {
+        "shouldCreate": true,
+        "profile": "ProfileName",
        "summary": "English summary of value",
        "contactInfo": { "email": "person@example.com", "name": "Jane Doe" }
      },
@@ -47,7 +51,11 @@ Execution contract:
 
    Decision rules:
    - use profile filenames in `profiles`;
-   - keep `profileDetails` and `lead.summary` in English;
+   - keep `profileDetails`, `flow.pendingQuestionTopic`, and `lead.summary` in English;
+   - `profileDetails` should capture stable visitor facts, not full dialogue history;
+   - if the current user message answers the pending question from previous turn, set `flow.answeredPendingQuestion` to true;
+   - if the current user message does not answer the pending question from previous turn, set `flow.answeredPendingQuestion` to false;
+   - set `flow.pendingQuestionTopic` to the exact topic only when the current agent response asks a strategic follow-up question; otherwise use an empty string;
    - set `lead.shouldCreate` to true only when the visitor is valuable and contact info is present;
    - set `meeting.shouldOffer` to true only when visitor is highly qualified and explicitly asks to talk/meet/book with a human;
    - when more information is needed, the visitor response must answer the current request and ask exactly one strategic follow-up question.
@@ -71,10 +79,11 @@ Execution contract:
    - do not add information.
 
 8) Return persistence payload fields so runtime can persist session updates:
-   - `userMessageEnglish`,
-   - `agentResponseEnglish`,
-   - `profiles`,
-   - `profileDetails`.
+    - `userMessageEnglish`,
+    - `agentResponseEnglish`,
+    - `profiles`,
+    - `profileDetails`,
+    - `flow`.
 
 Output contract (mandatory):
 - End with `final_answer` and provide ONLY a valid JSON object as text:
@@ -86,12 +95,17 @@ Output contract (mandatory):
     "agentResponseEnglish": "agent response translated to English for persistence",
     "profiles": ["..."],
     "profileDetails": ["..."],
+    "flow": {
+      "answeredPendingQuestion": true,
+      "pendingQuestionTopic": "..."
+    },
     "lead": { "shouldCreate": false } | { "shouldCreate": true, ...createLeadResult },
     "meeting": { "shouldOffer": false } | { "shouldOffer": true, "configData": "..." }
   }
 
 Hard rules:
 - `profileDetails`, lead summary, and persisted history fields must be English.
+- `flow.answeredPendingQuestion` must always be boolean and `flow.pendingQuestionTopic` must always be English text or empty string.
 - Never invent contact information.
 - Only call `create-lead` when visitor is valuable and contact details exist.
 - Only call `book-meeting` when visitor explicitly asks to talk/meet/book with a human.

@@ -34,10 +34,18 @@ Contains a list of filenames from `profilesInfo/` that are currently considered 
 - **Evolution**: The list is updated/narrowed down as more information is gathered from the user.
 
 #### 2. Profile Details
-A structured list or narrative of important facts the agent has learned about the user (e.g., industry, company size, specific pain points, budget).
+A structured list of important facts and conversational state extracted from the interaction.
+
+This section is the continuity memory source loaded by runtime for future turns. It must include:
+- stable visitor facts (industry, intent, constraints, readiness);
+- flow markers synthesized in English when needed:
+  - `The user is asked about ... His/her next reply should answer the question.`
+  - `The user did not answer the question about ...`
 
 ### History file (`{sessionId}-history.md`)
 #### 1. History
 A chronological log of the interaction:
 - **User**: [Input text]
 - **Agent**: [Response text]
+
+History remains persisted for audit and admin-side analysis, but it is not loaded into webCli orchestration context during runtime turns.

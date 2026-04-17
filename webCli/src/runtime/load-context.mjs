@@ -4,7 +4,6 @@ import {
 import {
     DATASTORE_TYPES,
     SESSION_SECTIONS,
-    getSessionHistoryFileName,
     getSessionProfileFileName,
 } from '../constants/datastore.mjs';
 
@@ -40,7 +39,6 @@ export async function loadContext({ sessionId }) {
     const infoFiles = await listMarkdownFiles(store, DATASTORE_TYPES.INFO);
     const profileFiles = await listMarkdownFiles(store, DATASTORE_TYPES.PROFILES_INFO);
     const sessionProfileFileName = getSessionProfileFileName(sessionId);
-    const sessionHistoryFileName = getSessionHistoryFileName(sessionId);
     let sessionRecord = null;
     const emptyRecord = { profiles: [], profileDetails: [], history: [] };
     const readSectionMap = async (fileName) => {
@@ -54,8 +52,7 @@ export async function loadContext({ sessionId }) {
         }
     };
     const profileRecord = await readSectionMap(sessionProfileFileName);
-    const historyRecord = await readSectionMap(sessionHistoryFileName);
-    const exists = Boolean(profileRecord || historyRecord);
+    const exists = Boolean(profileRecord);
     if (!exists) {
         sessionRecord = {
             exists: false,
@@ -63,21 +60,14 @@ export async function loadContext({ sessionId }) {
             parsed: emptyRecord,
         };
     } else {
-        const historySource = historyRecord?.sections?.[SESSION_SECTIONS.HISTORY] ?? '*None*';
-        const combined = [
-            profileRecord ? `--- [Session Profile: ${sessionProfileFileName}.md] ---\n${profileRecord.rawMarkdown.trim()}` : '',
-            historyRecord ? `--- [Session History: ${sessionHistoryFileName}.md] ---\n${historyRecord.rawMarkdown.trim()}` : '',
-        ].filter(Boolean).join('\n\n');
+        const combined = `--- [Session Profile: ${sessionProfileFileName}.md] ---\n${profileRecord.rawMarkdown.trim()}`;
         sessionRecord = {
             exists: true,
             content: combined,
             parsed: {
                 profiles: store.parseList(profileRecord?.sections?.[SESSION_SECTIONS.PROFILE]),
                 profileDetails: store.parseList(profileRecord?.sections?.[SESSION_SECTIONS.PROFILE_DETAILS]),
-                history: store.parseDialogue(historySource).map((entry) => ({
-                    role: entry.speaker.toLowerCase(),
-                    message: entry.message,
-                })),
+                history: [],
             },
         };
     }
@@ -94,6 +84,6 @@ export async function loadContext({ sessionId }) {
         combinedProfilesInfo: combineMarkdownFiles(profileFiles, 'Profile') || 'No profiling info available.',
         currentSessionStateText: sessionRecord.exists
             ? sessionRecord.content.trim()
-            : 'No previous session history found. This is a new session.',
+            : 'No previous session profile found. This is a new session.',
     };
 }

@@ -61,6 +61,10 @@ class FakeWebCliLLM extends LLMAgent {
                 agentResponseEnglish: 'Sure — we can help with API integration. Below you can find the scheduling link.',
                 profiles: ['Developer.md'],
                 profileDetails: ['Evaluating an API integration', 'Provided email address'],
+                flow: {
+                    answeredPendingQuestion: true,
+                    pendingQuestionTopic: 'implementation timeline and integration constraints',
+                },
                 lead: {
                     shouldCreate: true,
                     success: true,
@@ -120,6 +124,7 @@ test('webCli agent loads AchillesAgentLib and executes a full visitor turn', asy
         'utf8'
     );
     assert.match(sessionProfileContent, /- Developer\.md/);
+    assert.match(sessionProfileContent, /The user is asked about implementation timeline and integration constraints\./);
     assert.match(sessionHistoryContent, /Hello, I want to integrate your API/);
     assert.match(sessionHistoryContent, /Below you can find the scheduling link/);
 });

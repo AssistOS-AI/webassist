@@ -1,0 +1,107 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import { LLMAgent } from 'achillesAgentLib';
+
+import { createWebCliAgent } from '../src/index.mjs';
+import { getSessionHistoryFileName, getSessionProfileFileName } from '../src/constants/datastore.mjs';
+import { createWebCliSandbox } from './helpers.mjs';
+
+class FakeFlowSynthesisLLM extends LLMAgent {
+    constructor() {
+        super({
+            name: 'FakeFlowSynthesisLLM',
+            invokerStrategy: async () => '',
+        });
+    }
+
+    async complete({ context }) {
+        if (context?.intent !== 'agentic-session-planner') {
+            throw new Error(`Unexpected complete intent: ${context?.intent}`);
+        }
+
+        const userPrompt = String(context?.userPrompt ?? '');
+        const sessionId = userPrompt.match(/Session ID:\s*([^\n]+)/)?.[1]?.trim() || 'session-flow';
+        const isSecondTurn = userPrompt.includes('I can share some papers later');
+
+        if (isSecondTurn) {
+            return {
+                tool: 'final_answer',
+                toolPrompt: JSON.stringify({
+                    success: true,
+                    sessionId,
+                    response: 'Thanks. I still need one detail: what project timeline and expected outcomes do you have?',
+                    userMessageEnglish: 'I can share some papers later.',
+                    agentResponseEnglish: 'Thanks. I still need one detail: what project timeline and expected outcomes do you have?',
+                    profiles: ['Researcher.md'],
+                    profileDetails: ['Interested in research collaboration', 'Open to academic-industry partnerships'],
+                    flow: {
+                        answeredPendingQuestion: false,
+                        pendingQuestionTopic: 'project timeline and expected outcomes',
+                    },
+                    lead: { shouldCreate: false },
+                    meeting: { shouldOffer: false },
+                }),
+                reason: 'Return second turn payload.',
+            };
+        }
+
+        return {
+            tool: 'final_answer',
+            toolPrompt: JSON.stringify({
+                success: true,
+                sessionId,
+                response: 'Great. What available datasets and student resources can you provide for collaboration?',
+                userMessageEnglish: 'Can we collaborate on AI research?',
+                agentResponseEnglish: 'Great. What available datasets and student resources can you provide for collaboration?',
+                profiles: ['Researcher.md'],
+                profileDetails: ['Interested in research collaboration'],
+                flow: {
+                    answeredPendingQuestion: true,
+                    pendingQuestionTopic: 'available datasets and student resources',
+                },
+                lead: { shouldCreate: false },
+                meeting: { shouldOffer: false },
+            }),
+            reason: 'Return first turn payload.',
+        };
+    }
+}
+
+test('webCli synthesizes conversational flow inside profile details and keeps history persisted on disk', async (t) => {
+    const sandbox = await createWebCliSandbox();
+    t.after(async () => sandbox.cleanup());
+
+    const agent = await createWebCliAgent({
+        agentRoot: sandbox.agentRoot,
+        dataDir: sandbox.dataDir,
+        llmAgent: new FakeFlowSynthesisLLM(),
+    });
+
+    const firstTurn = await agent.handleMessage({
+        sessionId: 'session-flow-1',
+        message: 'Can we collaborate on AI research?',
+    });
+
+    assert.deepEqual(firstTurn.profiles, ['Researcher.md']);
+    assert.ok(firstTurn.profileDetails.includes('The user is asked about available datasets and student resources. His/her next reply should answer the question.'));
+
+    const secondTurn = await agent.handleMessage({
+        sessionId: 'session-flow-1',
+        message: 'I can share some papers later.',
+    });
+
+    assert.ok(secondTurn.profileDetails.includes('The user did not answer the question about available datasets and student resources.'));
+    assert.ok(secondTurn.profileDetails.includes('The user is asked about project timeline and expected outcomes. His/her next reply should answer the question.'));
+
+    const profilePath = path.join(sandbox.dataDir, 'sessions', `${getSessionProfileFileName('session-flow-1')}.md`);
+    const historyPath = path.join(sandbox.dataDir, 'sessions', `${getSessionHistoryFileName('session-flow-1')}.md`);
+    const profileContent = await fs.readFile(profilePath, 'utf8');
+    const historyContent = await fs.readFile(historyPath, 'utf8');
+
+    assert.match(profileContent, /The user did not answer the question about available datasets and student resources\./);
+    assert.match(profileContent, /The user is asked about project timeline and expected outcomes\./);
+    assert.match(historyContent, /Can we collaborate on AI research\?/);
+    assert.match(historyContent, /I can share some papers later\./);
+});

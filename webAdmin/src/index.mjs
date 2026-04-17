@@ -7,6 +7,9 @@ import { fileURLToPath } from 'node:url';
 
 import { createWebAdminAgent } from './WebAdminAgent.mjs';
 
+const SINGLE_LINE_BATCH_MS = 120;
+const MULTILINE_PASTE_BATCH_MS = 1800;
+
 function printUsage() {
     process.stdout.write(`Usage:\n  webAdmin/src/index.mjs "message"\n\nOptions:\n  --session-id <id>            Reuse a specific session id\n  --data-dir <dir>             Override data directory\n  --agent-root <dir>           Override agent root directory\n  -h, --help                   Show this help\n`);
 }
@@ -120,32 +123,73 @@ async function runInteractive(agent, state) {
         output: process.stdout,
         prompt: 'you> ',
     });
+    let isClosing = false;
+    let pendingLines = [];
+    let flushTimer = null;
+    let processingChain = Promise.resolve();
+
+    const flushPendingLines = () => {
+        if (flushTimer) {
+            clearTimeout(flushTimer);
+            flushTimer = null;
+        }
+        if (pendingLines.length === 0) {
+            return;
+        }
+
+        const message = pendingLines.join('\n').trim();
+        pendingLines = [];
+
+        processingChain = processingChain.then(async () => {
+            if (!message) {
+                if (!isClosing) {
+                    rl.prompt();
+                }
+                return;
+            }
+            if (message === 'exit' || message === 'quit' || message === ':q') {
+                isClosing = true;
+                rl.close();
+                return;
+            }
+            await runTurn(agent, {
+                sessionId: state.sessionId,
+                message,
+            });
+            if (!isClosing) {
+                rl.prompt();
+            }
+        });
+    };
+
+    const scheduleFlush = () => {
+        if (flushTimer) {
+            clearTimeout(flushTimer);
+        }
+        const batchDelay = pendingLines.length > 1
+            ? MULTILINE_PASTE_BATCH_MS
+            : SINGLE_LINE_BATCH_MS;
+        flushTimer = setTimeout(() => {
+            flushPendingLines();
+        }, batchDelay);
+    };
 
     rl.on('SIGINT', () => {
         process.stdout.write('\n');
+        isClosing = true;
+        flushPendingLines();
         rl.close();
         process.exit(130);
     });
+    rl.on('line', (line) => {
+        pendingLines.push(line);
+        scheduleFlush();
+    });
 
     rl.prompt();
-    for await (const line of rl) {
-        const text = line.trim();
-        if (!text) {
-            rl.prompt();
-            continue;
-        }
-
-        if (text === 'exit' || text === 'quit' || text === ':q') {
-            rl.close();
-            break;
-        }
-
-        await runTurn(agent, {
-            sessionId: state.sessionId,
-            message: text,
-        });
-        rl.prompt();
-    }
+    await new Promise((resolve) => rl.once('close', resolve));
+    flushPendingLines();
+    await processingChain;
 }
 
 async function main() {

@@ -25,10 +25,12 @@ The runtime sends a prompt containing a JSON payload:
 
 ## Orchestration Contract
 1. Read context from runtime-provided input (`context` object in prompt JSON).
-2. Build an internal decision object (response draft, profiles, profileDetails, lead, meeting).
+2. Build an internal decision object (response draft, profiles, profileDetails, flow, lead, meeting).
 3. Ensure decision constraints:
    - profile filenames in `profiles`;
    - `profileDetails` and lead summary in English;
+   - `flow.answeredPendingQuestion` as boolean and `flow.pendingQuestionTopic` in English text or empty string;
+   - `profileDetails` captures stable visitor facts, not full transcript copy;
    - lead only when value + contact info;
    - meeting only for explicit human-contact ask;
    - when info is missing, answer current question and ask exactly one strategic follow-up question.
@@ -37,6 +39,9 @@ The runtime sends a prompt containing a JSON payload:
 6. Build final visitor response in visitor language.
 7. Translate both messages to English for persistence (preserve intent/facts, concise, no added info).
 8. Return a final JSON payload through `final_answer`.
+
+## Runtime Continuity Rule
+`webCli` runtime synthesizes continuity markers into profile details based on `flow` output and previous session profile details. History files remain persisted for audit, but orchestration continuity relies on profile details.
 
 ## Output Contract
 The orchestrator must end with a JSON object containing:
@@ -47,6 +52,7 @@ The orchestrator must end with a JSON object containing:
 - `agentResponseEnglish`
 - `profiles`
 - `profileDetails`
+- `flow`
 - `lead`
 - `meeting`
 
