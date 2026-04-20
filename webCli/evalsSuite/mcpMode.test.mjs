@@ -78,7 +78,10 @@ test('mcp mode supports required CLI variants', async (t) => {
         const result = await runCli(['-mcp', '--session-id', sessionId, 'Hello from explicit session']);
 
         assert.equal(result.code, 0, result.stderr);
-        assert.equal(result.stdout.trim().startsWith('{'), false);
+        const payload = JSON.parse(result.stdout);
+        assert.equal(payload.sessionId, sessionId);
+        assert.equal(typeof payload.message, 'string');
+        assert.equal(payload.message.length > 0, true);
 
         await assertDirectoryExists(defaultDataDir);
         const sessionPath = path.join(defaultDataDir, 'sessions', `${getSessionHistoryFileName(sessionId)}.md`);
@@ -94,7 +97,8 @@ test('mcp mode supports required CLI variants', async (t) => {
 
         assert.equal(result.code, 0, result.stderr);
         const payload = JSON.parse(result.stdout);
-        assert.equal(payload.success, true);
+        assert.equal(typeof payload.message, 'string');
+        assert.equal(payload.message.length > 0, true);
         assert.match(payload.sessionId, /^session-/);
 
         await assertDirectoryExists(defaultDataDir);
@@ -125,7 +129,8 @@ test('mcp mode supports required CLI variants', async (t) => {
 
         assert.equal(result.code, 0, result.stderr);
         const payload = JSON.parse(result.stdout);
-        assert.equal(payload.success, true);
+        assert.equal(typeof payload.message, 'string');
+        assert.equal(payload.message.length > 0, true);
         assert.equal(payload.sessionId, sessionId);
 
         await assertDirectoryExists(customDataDir);
@@ -163,7 +168,8 @@ test('mcp mode supports required CLI variants', async (t) => {
 
         assert.equal(result.code, 0, result.stderr);
         const payload = JSON.parse(result.stdout);
-        assert.equal(payload.success, true);
+        assert.equal(typeof payload.message, 'string');
+        assert.equal(payload.message.length > 0, true);
         assert.equal(payload.sessionId, sessionId);
 
         const expectedDataDir = path.join(customRuntimeRoot, 'data');
@@ -188,7 +194,8 @@ test('mcp mode supports required CLI variants', async (t) => {
 
         assert.equal(result.code, 0, result.stderr);
         const payload = JSON.parse(result.stdout);
-        assert.equal(payload.success, true);
+        assert.equal(typeof payload.message, 'string');
+        assert.equal(payload.message.length > 0, true);
         assert.equal(payload.sessionId, sessionId);
 
         const sessionPath = path.join(defaultDataDir, 'sessions', `${getSessionHistoryFileName(sessionId)}.md`);
@@ -197,5 +204,22 @@ test('mcp mode supports required CLI variants', async (t) => {
         await fs.readFile(profilePath, 'utf8');
         assert.match(sessionContent, /### 1\. History/);
         createdDefaultSessions.push(sessionId);
+    });
+
+    await t.test('supports MCP envelope input when -mcp flag is present', async () => {
+        const envelope = {
+            input: {
+                message: 'Hello from envelope mode',
+            },
+        };
+        const result = await runCli(['-mcp'], {
+            stdin: `${JSON.stringify(envelope)}\n`,
+        });
+
+        assert.equal(result.code, 0, result.stderr);
+        const payload = JSON.parse(result.stdout);
+        assert.equal(typeof payload.message, 'string');
+        assert.equal(payload.message.length > 0, true);
+        assert.match(payload.sessionId, /^session-/);
     });
 });

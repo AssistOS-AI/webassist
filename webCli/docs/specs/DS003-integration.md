@@ -16,9 +16,10 @@ The **webCli** agent is implemented as a Node.js CLI tool with a single `session
 
 ## MCP Contract Integration
 - **Configuration File**: `webCli/mcp-config.json`
-- **Tool Entry**: `web_cli_chat`
-- **Command Target**: `/code/src/index.mjs`
-- **Container Path Note**: Ploinky mounts agent code at `/code` inside the runtime container, so repo path `webCli/src/index.mjs` maps to container path `/code/src/index.mjs` for MCP execution.
+- **Tool Entries**:
+  - `web_cli_chat`: executes one webCli conversational turn (`/code/src/index.mjs`) with command args `['-mcp']`.
+  - `web_cli_history`: returns parsed persisted history for a given `sessionId` (`/code/src/mcp/get-session-history.mjs`).
+- **Container Path Note**: Ploinky mounts agent code at `/code` inside the runtime container, so repo path `webCli/src/...` maps to container path `/code/src/...` for MCP execution.
 - **Execution Mode**: MCP requests are routed as single-shot invocations equivalent to CLI `-mcp` behavior.
 - **Input Parameters**: MCP input schema mirrors CLI runtime parameters:
   - `message` ↔ positional `<message>`
@@ -26,6 +27,16 @@ The **webCli** agent is implemented as a Node.js CLI tool with a single `session
   - `json` ↔ `--json`
   - `dataDir` ↔ `--data-dir`
   - `agentRoot` ↔ `--agent-root`
+- **History MCP Input Parameters** (`web_cli_history`):
+  - `sessionId` (required)
+  - `dataDir` (optional)
+  - `agentRoot` (optional)
+- **Browser MCP Invocation**: UI clients call `/mcps/webCli/mcp` and execute tools `web_cli_chat` and `web_cli_history`; browser clients may persist only `sessionId` for turn-to-turn continuity.
+- **Session Ownership Rule (plugin MCP)**: when client omits `sessionId` on first `web_cli_chat` call, server generates one and returns it; client persists and reuses that `sessionId` for all subsequent turns in the same tab.
+- **MCP Chat Output Contract** (`web_cli_chat`): returns compact JSON object with exactly:
+  - `sessionId` (string)
+  - `message` (string)
+- **MCP Mode Rule (chat tool)**: `webCli/src/index.mjs` enters MCP mode only when `-mcp` flag is present. MCP envelope payload from stdin is parsed only inside that explicit mode.
 
 ## CLI Parameters
 - `<message>` (positional): User message text. In interactive mode it can be omitted at startup and provided turn-by-turn.

@@ -57,6 +57,10 @@ To define the current automated test coverage for `webCli`, including the behavi
 - Located in `webCli/evalsSuite/mcpMode.test.mjs`.
 - Not part of `webCli/tests/runAll.mjs` default run.
 
+### 8) `get-session-history.mcp.test.mjs`
+- Verifies MCP history module returns parsed dialogue entries for an existing `sessionId`.
+- Verifies missing session history returns deterministic empty payload (`exists: false`, empty history array).
+
 ## Fixture Strategy
 - Tests use isolated sandbox data directories and fixture markdown seed content.
 - Sandbox fixtures also copy `skills/` and repo `data/` to support strict agent-root discovery and default datastore path resolution.

@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 
-import fs from 'node:fs/promises';
 import { randomBytes } from 'node:crypto';
 import path from 'node:path';
 import readline from 'node:readline';
@@ -158,15 +157,29 @@ async function readStdin() {
         return '';
     }
 
-    try {
-        return await fs.readFile(0, 'utf8');
-    } catch {
-        return '';
+    process.stdin.setEncoding('utf8');
+    let data = '';
+    for await (const chunk of process.stdin) {
+        data += chunk;
     }
+    return data;
 }
 
-async function runTurn(agent, { sessionId, message, jsonOutput }) {
+async function runTurn(agent, {
+    sessionId,
+    message,
+    jsonOutput,
+    mcpOutput = false,
+}) {
     const result = await agent.handleMessage({ sessionId, message });
+    if (mcpOutput) {
+        const payload = {
+            sessionId: String(result.sessionId ?? sessionId ?? '').trim(),
+            message: String(result.response ?? '').trim(),
+        };
+        process.stdout.write(`${JSON.stringify(payload, null, 2)}\n`);
+        return;
+    }
     if (jsonOutput) {
         process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
         return;
@@ -230,8 +243,6 @@ async function main() {
     }
 
     const stdinRaw = await readStdin();
-    const mcpPayload = parseMcpPayload(stdinRaw);
-    const usedMcpEnvelope = Boolean(mcpPayload?.isEnvelope);
 
     const effective = {
         mode: cli.mode,
@@ -242,29 +253,27 @@ async function main() {
         message: cli.message,
     };
 
-    if (mcpPayload) {
-        if (!effective.message && mcpPayload.message) {
-            effective.message = mcpPayload.message;
+    if (effective.mode === 'mcp') {
+        const mcpPayload = parseMcpPayload(stdinRaw);
+        if (mcpPayload) {
+            if (!effective.message && mcpPayload.message) {
+                effective.message = mcpPayload.message;
+            }
+            if (!effective.sessionId && mcpPayload.sessionId) {
+                effective.sessionId = mcpPayload.sessionId;
+            }
+            if (!effective.dataDir && mcpPayload.dataDir) {
+                effective.dataDir = mcpPayload.dataDir;
+            }
+            if (!effective.agentRoot && mcpPayload.agentRoot) {
+                effective.agentRoot = mcpPayload.agentRoot;
+            }
+            if (!cli.json && mcpPayload.json) {
+                effective.json = true;
+            }
+        } else if (!effective.message && stdinRaw) {
+            effective.message = stdinRaw.trim();
         }
-        if (!effective.sessionId && mcpPayload.sessionId) {
-            effective.sessionId = mcpPayload.sessionId;
-        }
-        if (!effective.dataDir && mcpPayload.dataDir) {
-            effective.dataDir = mcpPayload.dataDir;
-        }
-        if (!effective.agentRoot && mcpPayload.agentRoot) {
-            effective.agentRoot = mcpPayload.agentRoot;
-        }
-        if (!cli.json && mcpPayload.json) {
-            effective.json = true;
-        }
-        if (usedMcpEnvelope && cli.mode !== 'mcp') {
-            effective.mode = 'mcp';
-        }
-    }
-
-    if (effective.mode === 'mcp' && !effective.message && stdinRaw && !usedMcpEnvelope) {
-        effective.message = stdinRaw.trim();
     }
 
     if (!effective.sessionId) {
@@ -285,6 +294,7 @@ async function main() {
             sessionId: effective.sessionId,
             message: effective.message,
             jsonOutput: effective.json,
+            mcpOutput: true,
         });
         return;
     }
