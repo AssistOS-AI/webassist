@@ -2,14 +2,39 @@ const DEFAULTS = Object.freeze({
     theme: 'light',
     baseUrl: 'http://localhost:8080',
     headerText: 'WebCli Assistant',
-    chatBackgroundLight: '#f2f7ff',
-    chatBackgroundDark: '#0f172a',
-    userBubbleLight: '#1e293b',
-    userBubbleDark: '#334155',
-    agentBubbleLight: '#f8fbff',
-    agentBubbleDark: '#1f2937',
-    headerLight: '#0f172a',
-    headerDark: '#111827'
+    subtitleText: 'Embedded preview',
+    themes: Object.freeze({
+        light: Object.freeze({
+            chatBackground: '#f2f7ff',
+            userBubble: '#1e293b',
+            agentBubble: '#f8fbff',
+            headerColor: '#0f172a'
+        }),
+        dark: Object.freeze({
+            chatBackground: '#0f172a',
+            userBubble: '#334155',
+            agentBubble: '#1f2937',
+            headerColor: '#111827'
+        }),
+        aqua: Object.freeze({
+            chatBackground: '#e6f7fb',
+            userBubble: '#0b4f6c',
+            agentBubble: '#d3edf5',
+            headerColor: '#0f3d53'
+        }),
+        forest: Object.freeze({
+            chatBackground: '#0f1f17',
+            userBubble: '#1f4d3a',
+            agentBubble: '#1a2f24',
+            headerColor: '#102419'
+        }),
+        amethyst: Object.freeze({
+            chatBackground: '#f4eeff',
+            userBubble: '#5b3f8c',
+            agentBubble: '#ece2ff',
+            headerColor: '#3e2a66'
+        })
+    })
 });
 
 function normalizeString(value, fallback = '') {
@@ -22,13 +47,19 @@ function normalizeHex(value, fallback) {
 }
 
 function buildThemeDefaults(theme) {
-    const dark = theme === 'dark';
+    const normalizedTheme = Object.prototype.hasOwnProperty.call(DEFAULTS.themes, theme) ? theme : DEFAULTS.theme;
+    const palette = DEFAULTS.themes[normalizedTheme];
     return {
-        chatBackground: dark ? DEFAULTS.chatBackgroundDark : DEFAULTS.chatBackgroundLight,
-        userBubble: dark ? DEFAULTS.userBubbleDark : DEFAULTS.userBubbleLight,
-        agentBubble: dark ? DEFAULTS.agentBubbleDark : DEFAULTS.agentBubbleLight,
-        headerColor: dark ? DEFAULTS.headerDark : DEFAULTS.headerLight
+        chatBackground: palette.chatBackground,
+        userBubble: palette.userBubble,
+        agentBubble: palette.agentBubble,
+        headerColor: palette.headerColor
     };
+}
+
+function normalizeTheme(value) {
+    const normalized = String(value || '').trim().toLowerCase();
+    return Object.prototype.hasOwnProperty.call(DEFAULTS.themes, normalized) ? normalized : DEFAULTS.theme;
 }
 
 function normalizeBaseUrl(value) {
@@ -86,6 +117,37 @@ function buildIframeCode(src) {
     return `<iframe src="${safeSrc}" title="WebCli Chat" loading="lazy" style="width:100%;max-width:420px;height:640px;border:0;border-radius:16px;overflow:hidden" allow="clipboard-write"></iframe>`;
 }
 
+async function requestMcpPublicToken(baseUrl) {
+    const normalizedBaseUrl = normalizeBaseUrl(baseUrl);
+    if (!normalizedBaseUrl) {
+        throw new Error('Enter a valid Base URL first.');
+    }
+    const response = await fetch(`${normalizedBaseUrl}/mcp-public/webCli`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+            accept: 'application/json'
+        }
+    });
+
+    let payload = null;
+    try {
+        payload = await response.json();
+    } catch {
+        payload = null;
+    }
+
+    if (!response.ok || payload?.ok === false) {
+        const errorText = normalizeString(payload?.error, `HTTP ${response.status}`);
+        throw new Error(`Failed to create MCP public token: ${errorText}`);
+    }
+    const token = normalizeString(payload?.token);
+    if (!token) {
+        throw new Error('MCP public token endpoint returned an invalid token.');
+    }
+    return token;
+}
+
 export class WebcliSettingsSettings {
     constructor(element, invalidate) {
         this.element = element;
@@ -95,10 +157,11 @@ export class WebcliSettingsSettings {
             baseUrl: DEFAULTS.baseUrl,
             theme: DEFAULTS.theme,
             headerText: DEFAULTS.headerText,
-            chatBackground: DEFAULTS.chatBackgroundLight,
-            userBubble: DEFAULTS.userBubbleLight,
-            agentBubble: DEFAULTS.agentBubbleLight,
-            headerColor: DEFAULTS.headerLight,
+            subtitleText: DEFAULTS.subtitleText,
+            chatBackground: buildThemeDefaults(DEFAULTS.theme).chatBackground,
+            userBubble: buildThemeDefaults(DEFAULTS.theme).userBubble,
+            agentBubble: buildThemeDefaults(DEFAULTS.theme).agentBubble,
+            headerColor: buildThemeDefaults(DEFAULTS.theme).headerColor,
             status: '',
             statusType: ''
         };
@@ -118,6 +181,7 @@ export class WebcliSettingsSettings {
         this.baseUrlInput = this.element.querySelector('#webcliBaseUrl');
         this.themeInput = this.element.querySelector('#webcliTheme');
         this.headerTextInput = this.element.querySelector('#webcliHeaderText');
+        this.subtitleTextInput = this.element.querySelector('#webcliSubtitleText');
         this.chatBackgroundInput = this.element.querySelector('#webcliChatBackground');
         this.userBubbleInput = this.element.querySelector('#webcliUserBubble');
         this.agentBubbleInput = this.element.querySelector('#webcliAgentBubble');
@@ -141,7 +205,7 @@ export class WebcliSettingsSettings {
         });
 
         this.themeInput?.addEventListener('change', (event) => {
-            const nextTheme = String(event.target?.value || 'light') === 'dark' ? 'dark' : 'light';
+            const nextTheme = normalizeTheme(event.target?.value);
             this.state.theme = nextTheme;
             const themeDefaults = buildThemeDefaults(nextTheme);
             this.state.chatBackground = themeDefaults.chatBackground;
@@ -155,6 +219,12 @@ export class WebcliSettingsSettings {
 
         this.headerTextInput?.addEventListener('input', (event) => {
             this.state.headerText = String(event.target?.value || '');
+            this.clearStatus();
+            this.renderDerived();
+        });
+
+        this.subtitleTextInput?.addEventListener('input', (event) => {
+            this.state.subtitleText = String(event.target?.value || '');
             this.clearStatus();
             this.renderDerived();
         });
@@ -194,6 +264,9 @@ export class WebcliSettingsSettings {
         if (this.headerTextInput) {
             this.headerTextInput.value = this.state.headerText;
         }
+        if (this.subtitleTextInput) {
+            this.subtitleTextInput.value = this.state.subtitleText;
+        }
         if (this.chatBackgroundInput) {
             this.chatBackgroundInput.value = this.state.chatBackground;
         }
@@ -212,7 +285,7 @@ export class WebcliSettingsSettings {
         return normalizeBaseUrl(this.state.baseUrl);
     }
 
-    buildEmbedUrl() {
+    buildEmbedUrl(mcpToken = '') {
         const baseUrl = this.getNormalizedBaseUrl();
         if (!baseUrl) {
             return '';
@@ -221,14 +294,25 @@ export class WebcliSettingsSettings {
         const params = {
             theme: this.state.theme,
             headerText: normalizeString(this.state.headerText, DEFAULTS.headerText),
+            subtitleText: normalizeString(this.state.subtitleText, DEFAULTS.subtitleText),
             chatBackground: normalizeHex(this.state.chatBackground, buildThemeDefaults(this.state.theme).chatBackground),
             userBubble: normalizeHex(this.state.userBubble, buildThemeDefaults(this.state.theme).userBubble),
             agentBubble: normalizeHex(this.state.agentBubble, buildThemeDefaults(this.state.theme).agentBubble),
-            headerColor: normalizeHex(this.state.headerColor, buildThemeDefaults(this.state.theme).headerColor)
+            headerColor: normalizeHex(this.state.headerColor, buildThemeDefaults(this.state.theme).headerColor),
+            mcpToken: normalizeString(mcpToken)
         };
 
         const query = toQuery(params);
         return `${baseUrl}/webCli/IDE-plugins/web-cli-chat/web-cli-chat.html?${query}`;
+    }
+
+    async buildTokenizedEmbedUrl() {
+        const baseUrl = this.getNormalizedBaseUrl();
+        if (!baseUrl) {
+            return '';
+        }
+        const token = await requestMcpPublicToken(baseUrl);
+        return this.buildEmbedUrl(token);
     }
 
     renderDerived() {
@@ -275,30 +359,39 @@ export class WebcliSettingsSettings {
         this.renderStatus();
     }
 
-    openPreviewChat() {
-        const embedUrl = this.buildEmbedUrl();
-        if (!embedUrl) {
-            this.state.status = 'Enter a valid Base URL first.';
+    async openPreviewChat() {
+        try {
+            const embedUrl = await this.buildTokenizedEmbedUrl();
+            if (!embedUrl) {
+                this.state.status = 'Enter a valid Base URL first.';
+                this.state.statusType = 'error';
+                this.renderStatus();
+                return;
+            }
+            window.open(embedUrl, '_blank', 'noopener');
+            this.state.status = 'Preview opened in a new tab.';
+            this.state.statusType = '';
+            this.renderStatus();
+        } catch (error) {
+            this.state.status = error?.message || 'Failed to open preview.';
             this.state.statusType = 'error';
             this.renderStatus();
-            return;
         }
-        window.open(embedUrl, '_blank', 'noopener');
-        this.state.status = 'Preview opened in a new tab.';
-        this.state.statusType = '';
-        this.renderStatus();
     }
 
     async copyIframeCode() {
-        const snippet = this.snippetArea?.value || '';
-        if (!snippet) {
-            this.state.status = 'Enter a valid Base URL first.';
-            this.state.statusType = 'error';
-            this.renderStatus();
-            return;
-        }
-
         try {
+            const embedUrl = await this.buildTokenizedEmbedUrl();
+            if (!embedUrl) {
+                this.state.status = 'Enter a valid Base URL first.';
+                this.state.statusType = 'error';
+                this.renderStatus();
+                return;
+            }
+            const snippet = buildIframeCode(embedUrl);
+            if (this.snippetArea) {
+                this.snippetArea.value = snippet;
+            }
             if (navigator.clipboard?.writeText) {
                 await navigator.clipboard.writeText(snippet);
             } else {

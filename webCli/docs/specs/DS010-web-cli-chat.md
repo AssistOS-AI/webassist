@@ -17,6 +17,10 @@ Define the active plugin contract for the Web CLI chat integration.
   - `web-cli-chat.css`
   - `web-cli-chat.js`
 - Settings generates Preview and iframe snippets targeting `web-cli-chat.html`.
+- Iframe UX is launcher-based:
+  - initial state is closed (chat icon visible),
+  - click icon opens chat panel,
+  - close button (`X`) in header closes panel.
 
 ## Runtime Contract
 - MCP endpoint: `/mcps/webCli/mcp`

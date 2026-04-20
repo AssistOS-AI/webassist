@@ -112,6 +112,77 @@ function persistSessionId(storageKey, sessionId) {
     }
 }
 
+const THEME_PRESETS = Object.freeze({
+    light: Object.freeze({
+        chatBackground: '#f2f7ff',
+        userBubble: '#1e293b',
+        agentBubble: '#f8fbff',
+        headerColor: '#0f172a'
+    }),
+    dark: Object.freeze({
+        chatBackground: '#0f172a',
+        userBubble: '#334155',
+        agentBubble: '#1f2937',
+        headerColor: '#111827'
+    }),
+    aqua: Object.freeze({
+        chatBackground: '#e6f7fb',
+        userBubble: '#0b4f6c',
+        agentBubble: '#d3edf5',
+        headerColor: '#0f3d53'
+    }),
+    forest: Object.freeze({
+        chatBackground: '#0f1f17',
+        userBubble: '#1f4d3a',
+        agentBubble: '#1a2f24',
+        headerColor: '#102419'
+    }),
+    amethyst: Object.freeze({
+        chatBackground: '#f4eeff',
+        userBubble: '#5b3f8c',
+        agentBubble: '#ece2ff',
+        headerColor: '#3e2a66'
+    }),
+});
+
+function normalizeTheme(value) {
+    const normalized = String(value || '').trim().toLowerCase();
+    return Object.prototype.hasOwnProperty.call(THEME_PRESETS, normalized) ? normalized : 'light';
+}
+
+function normalizeHex(value, fallback) {
+    const normalized = String(value || '').trim().toLowerCase();
+    return /^#[0-9a-f]{6}$/i.test(normalized) ? normalized : fallback;
+}
+
+function hexToRgb(hex) {
+    const value = normalizeHex(hex, '');
+    if (!value) return null;
+    return {
+        r: Number.parseInt(value.slice(1, 3), 16),
+        g: Number.parseInt(value.slice(3, 5), 16),
+        b: Number.parseInt(value.slice(5, 7), 16),
+    };
+}
+
+function relativeLuminance(rgb) {
+    const convert = (channel) => {
+        const value = channel / 255;
+        return value <= 0.03928 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+    };
+    const r = convert(rgb.r);
+    const g = convert(rgb.g);
+    const b = convert(rgb.b);
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+function pickReadableTextColor(backgroundHex, dark = '#0f172a', light = '#f8fafc') {
+    const rgb = hexToRgb(backgroundHex);
+    if (!rgb) return dark;
+    const luminance = relativeLuminance(rgb);
+    return luminance > 0.5 ? dark : light;
+}
+
 class WebCliMcpChatClient {
     constructor(options = {}) {
         this.clientModuleUrl = options.clientModuleUrl || '/MCPBrowserClient.js';
@@ -230,6 +301,10 @@ function mountChatSurface(rootNode, options = {}) {
     const root = rootNode || document;
     const q = (selector) => root.querySelector(selector);
 
+    const widgetEl = q('#chatWidget');
+    const panelEl = q('#chatPanel');
+    const launcherEl = q('#chatLauncher');
+    const closeEl = q('#chatClose');
     const titleEl = q('#chatTitle');
     const subtitleEl = q('#chatSubtitle');
     const messagesEl = q('#chatMessages');
@@ -245,24 +320,67 @@ function mountChatSurface(rootNode, options = {}) {
     const query = options.query || new URLSearchParams(window.location.search);
     const storageKey = options.storageKey || 'webcli-global-chat:embedSessionId';
     const subtitleText = options.subtitleText || 'Embedded preview';
+    const enableLauncher = options.enableLauncher === true;
     const validateTools = options.validateTools === true;
-    const chatClient = new WebCliMcpChatClient({ validateTools });
+    const mcpToken = normalizeString(query.get('mcpToken'));
+    const endpoint = mcpToken
+        ? `/mcp-public/webCli/${encodeURIComponent(mcpToken)}`
+        : '/mcps/webCli/mcp';
+    const chatClient = new WebCliMcpChatClient({ validateTools, endpoint });
 
-    const theme = query.get('theme') === 'dark' ? 'dark' : 'light';
+    const theme = normalizeTheme(query.get('theme'));
+    const preset = THEME_PRESETS[theme];
     const headerText = normalizeString(query.get('headerText'), 'WebCli Assistant');
-    const chatBackground = normalizeString(query.get('chatBackground'), theme === 'dark' ? '#0f172a' : '#f2f7ff');
-    const userBubble = normalizeString(query.get('userBubble'), theme === 'dark' ? '#334155' : '#1e293b');
-    const agentBubble = normalizeString(query.get('agentBubble'), theme === 'dark' ? '#1f2937' : '#f8fbff');
-    const headerColor = normalizeString(query.get('headerColor'), theme === 'dark' ? '#111827' : '#0f172a');
+    const subtitleOverride = normalizeString(query.get('subtitleText'));
+    const chatBackground = normalizeHex(query.get('chatBackground'), preset.chatBackground);
+    const userBubble = normalizeHex(query.get('userBubble'), preset.userBubble);
+    const agentBubble = normalizeHex(query.get('agentBubble'), preset.agentBubble);
+    const headerColor = normalizeHex(query.get('headerColor'), preset.headerColor);
+
+    const agentTextColor = pickReadableTextColor(agentBubble);
+    const userTextColor = pickReadableTextColor(userBubble);
+    const inputTextColor = pickReadableTextColor(chatBackground);
+    const sendTextColor = pickReadableTextColor(userBubble);
 
     const styleRoot = root === document ? document.documentElement : root;
     styleRoot.style.setProperty('--chat-bg', chatBackground);
     styleRoot.style.setProperty('--chat-user', userBubble);
     styleRoot.style.setProperty('--chat-agent', agentBubble);
     styleRoot.style.setProperty('--chat-header', headerColor);
+    styleRoot.style.setProperty('--chat-agent-text', agentTextColor);
+    styleRoot.style.setProperty('--chat-user-text', userTextColor);
+    styleRoot.style.setProperty('--chat-composer-bg', chatBackground);
+    styleRoot.style.setProperty('--chat-input-bg', chatBackground);
+    styleRoot.style.setProperty('--chat-input-text', inputTextColor);
+    styleRoot.style.setProperty('--chat-input-border', agentBubble);
+    styleRoot.style.setProperty('--chat-send-bg', userBubble);
+    styleRoot.style.setProperty('--chat-send-text', sendTextColor);
+    styleRoot.style.setProperty('--chat-base-text', inputTextColor);
 
     titleEl.textContent = headerText;
-    subtitleEl.textContent = subtitleText;
+    subtitleEl.textContent = subtitleOverride || subtitleText;
+
+    function setPanelOpen(isOpen) {
+        if (!widgetEl || !panelEl) {
+            return;
+        }
+        widgetEl.dataset.open = isOpen ? 'true' : 'false';
+        widgetEl.classList.toggle('open', isOpen);
+        panelEl.hidden = !isOpen;
+        if (launcherEl) {
+            launcherEl.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        }
+    }
+
+    if (widgetEl && panelEl) {
+        if (enableLauncher) {
+            widgetEl.classList.remove('inline-mode');
+            setPanelOpen(false);
+        } else {
+            widgetEl.classList.add('inline-mode');
+            setPanelOpen(true);
+        }
+    }
 
     let isPending = false;
     let sessionId = loadSessionId(storageKey);
@@ -389,11 +507,20 @@ function mountChatSurface(rootNode, options = {}) {
     const onBeforeUnload = () => {
         void chatClient.close();
     };
+    const onOpenPanel = () => {
+        setPanelOpen(true);
+        inputEl.focus();
+    };
+    const onClosePanel = () => {
+        setPanelOpen(false);
+    };
 
     inputEl.addEventListener('input', onInput);
     inputEl.addEventListener('keydown', onKeyDown);
     composerEl.addEventListener('submit', onSubmit);
     window.addEventListener('beforeunload', onBeforeUnload);
+    launcherEl?.addEventListener('click', onOpenPanel);
+    closeEl?.addEventListener('click', onClosePanel);
     void hydrateHistoryFromSession();
 
     return () => {
@@ -401,6 +528,8 @@ function mountChatSurface(rootNode, options = {}) {
         inputEl.removeEventListener('keydown', onKeyDown);
         composerEl.removeEventListener('submit', onSubmit);
         window.removeEventListener('beforeunload', onBeforeUnload);
+        launcherEl?.removeEventListener('click', onOpenPanel);
+        closeEl?.removeEventListener('click', onClosePanel);
         void chatClient.close();
     };
 }
@@ -419,6 +548,7 @@ export class WebCliChat {
         this.cleanup = mountChatSurface(this.element, {
             subtitleText: 'Context-aware website chat',
             storageKey: 'webcli-global-chat:tabSessionId',
+            enableLauncher: false,
             validateTools: true,
         });
     }
@@ -434,6 +564,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
         mountChatSurface(document, {
             subtitleText: 'Embedded preview',
             storageKey: 'webcli-global-chat:embedSessionId',
+            enableLauncher: true,
             validateTools: false,
         });
     }
