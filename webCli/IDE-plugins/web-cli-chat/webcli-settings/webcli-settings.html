@@ -1,0 +1,67 @@
+<div class="webcli-settings-modal">
+    <div class="modal-header">
+        <div class="modal-title">WebCli Chat Settings</div>
+        <div class="close" data-local-action="closeModal" aria-label="Close">
+            <img class="close-icon" src="./assets/icons/x-mark.svg" alt="close">
+        </div>
+    </div>
+
+    <div class="modal-body webcli-settings-body">
+        <p class="webcli-settings-description">
+            Configure a bundled iframe chat, preview it, and copy the embed code.
+        </p>
+
+        <div class="webcli-settings-grid">
+            <label class="form-item">
+                <span class="form-label">Base URL</span>
+                <input id="webcliBaseUrl" class="form-input" type="text" placeholder="https://example.com" spellcheck="false">
+            </label>
+
+            <label class="form-item">
+                <span class="form-label">Theme</span>
+                <select id="webcliTheme" class="form-input">
+                    <option value="light">Light</option>
+                    <option value="dark">Dark</option>
+                </select>
+            </label>
+
+            <label class="form-item">
+                <span class="form-label">Header Text</span>
+                <input id="webcliHeaderText" class="form-input" type="text" maxlength="100" placeholder="WebCli Assistant" spellcheck="false">
+            </label>
+
+            <label class="form-item color-item">
+                <span class="form-label">Chat Background</span>
+                <input id="webcliChatBackground" class="form-input" type="color">
+            </label>
+
+            <label class="form-item color-item">
+                <span class="form-label">User Bubble</span>
+                <input id="webcliUserBubble" class="form-input" type="color">
+            </label>
+
+            <label class="form-item color-item">
+                <span class="form-label">Agent Bubble</span>
+                <input id="webcliAgentBubble" class="form-input" type="color">
+            </label>
+
+            <label class="form-item color-item">
+                <span class="form-label">Header Color</span>
+                <input id="webcliHeaderColor" class="form-input" type="color">
+            </label>
+        </div>
+
+        <div class="webcli-settings-actions">
+            <button type="button" class="general-button" data-local-action="openAdminWebchat">Admin Webchat</button>
+            <button type="button" id="webcliPreviewButton" class="general-button" data-local-action="openPreviewChat">Preview Chat</button>
+            <button type="button" id="webcliCopyButton" class="general-button" data-local-action="copyIframeCode">Copy iframe code</button>
+        </div>
+
+        <label class="form-item webcli-snippet-wrap">
+            <span class="form-label">Generated iframe snippet</span>
+            <textarea id="webcliIframeSnippet" class="form-input" rows="6" readonly></textarea>
+        </label>
+
+        <div id="webcliSettingsStatus" class="webcli-settings-status" role="status" aria-live="polite"></div>
+    </div>
+</div>
