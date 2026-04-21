@@ -71,7 +71,6 @@ Define, in full detail, what `webcli-settings` can configure and how each settin
   - `userBubble`
   - `agentBubble`
   - `headerColor`
-  - `mcpToken` (added when tokenized public MCP access is issued)
 - Generated iframe snippet format:
   - `<iframe src="...">` with `title`, `loading="lazy"`, fixed style, `allow="clipboard-write"`.
 

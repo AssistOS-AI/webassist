@@ -322,10 +322,7 @@ function mountChatSurface(rootNode, options = {}) {
     const subtitleText = options.subtitleText || 'Embedded preview';
     const enableLauncher = options.enableLauncher === true;
     const validateTools = options.validateTools === true;
-    const mcpToken = normalizeString(query.get('mcpToken'));
-    const endpoint = mcpToken
-        ? `/mcp-public/webCli/${encodeURIComponent(mcpToken)}`
-        : '/mcps/webCli/mcp';
+    const endpoint = '/mcps/webCli/mcp';
     const chatClient = new WebCliMcpChatClient({ validateTools, endpoint });
 
     const theme = normalizeTheme(query.get('theme'));

@@ -1,6 +1,5 @@
 const DEFAULTS = Object.freeze({
     theme: 'light',
-    baseUrl: 'http://localhost:8080',
     headerText: 'WebCli Assistant',
     subtitleText: 'Embedded preview',
     themes: Object.freeze({
@@ -62,24 +61,6 @@ function normalizeTheme(value) {
     return Object.prototype.hasOwnProperty.call(DEFAULTS.themes, normalized) ? normalized : DEFAULTS.theme;
 }
 
-function normalizeBaseUrl(value) {
-    const raw = normalizeString(value);
-    if (!raw) {
-        return '';
-    }
-
-    const withProtocol = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
-    try {
-        const parsed = new URL(withProtocol);
-        if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
-            return '';
-        }
-        return parsed.origin;
-    } catch {
-        return '';
-    }
-}
-
 function toQuery(params) {
     const query = new URLSearchParams();
     Object.entries(params).forEach(([key, value]) => {
@@ -117,44 +98,12 @@ function buildIframeCode(src) {
     return `<iframe src="${safeSrc}" title="WebCli Chat" loading="lazy" style="width:100%;max-width:420px;height:640px;border:0;border-radius:16px;overflow:hidden" allow="clipboard-write"></iframe>`;
 }
 
-async function requestMcpPublicToken(baseUrl) {
-    const normalizedBaseUrl = normalizeBaseUrl(baseUrl);
-    if (!normalizedBaseUrl) {
-        throw new Error('Enter a valid Base URL first.');
-    }
-    const response = await fetch(`${normalizedBaseUrl}/mcp-public/webCli`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-            accept: 'application/json'
-        }
-    });
-
-    let payload = null;
-    try {
-        payload = await response.json();
-    } catch {
-        payload = null;
-    }
-
-    if (!response.ok || payload?.ok === false) {
-        const errorText = normalizeString(payload?.error, `HTTP ${response.status}`);
-        throw new Error(`Failed to create MCP public token: ${errorText}`);
-    }
-    const token = normalizeString(payload?.token);
-    if (!token) {
-        throw new Error('MCP public token endpoint returned an invalid token.');
-    }
-    return token;
-}
-
 export class WebcliSettingsSettings {
     constructor(element, invalidate) {
         this.element = element;
         this.invalidate = invalidate;
         this.props = element?.props || element?._componentProxy?.props || {};
         this.state = {
-            baseUrl: DEFAULTS.baseUrl,
             theme: DEFAULTS.theme,
             headerText: DEFAULTS.headerText,
             subtitleText: DEFAULTS.subtitleText,
@@ -178,7 +127,6 @@ export class WebcliSettingsSettings {
     }
 
     cacheElements() {
-        this.baseUrlInput = this.element.querySelector('#webcliBaseUrl');
         this.themeInput = this.element.querySelector('#webcliTheme');
         this.headerTextInput = this.element.querySelector('#webcliHeaderText');
         this.subtitleTextInput = this.element.querySelector('#webcliSubtitleText');
@@ -197,12 +145,6 @@ export class WebcliSettingsSettings {
             return;
         }
         this.element.dataset.webcliSettingsBound = 'true';
-
-        this.baseUrlInput?.addEventListener('input', (event) => {
-            this.state.baseUrl = String(event.target?.value || '');
-            this.clearStatus();
-            this.renderDerived();
-        });
 
         this.themeInput?.addEventListener('change', (event) => {
             const nextTheme = normalizeTheme(event.target?.value);
@@ -255,9 +197,6 @@ export class WebcliSettingsSettings {
     }
 
     syncInputsFromState() {
-        if (this.baseUrlInput) {
-            this.baseUrlInput.value = this.state.baseUrl;
-        }
         if (this.themeInput) {
             this.themeInput.value = this.state.theme;
         }
@@ -281,12 +220,12 @@ export class WebcliSettingsSettings {
         }
     }
 
-    getNormalizedBaseUrl() {
-        return normalizeBaseUrl(this.state.baseUrl);
+    getOrigin() {
+        return typeof window !== 'undefined' ? window.location.origin : '';
     }
 
-    buildEmbedUrl(mcpToken = '') {
-        const baseUrl = this.getNormalizedBaseUrl();
+    buildEmbedUrl() {
+        const baseUrl = this.getOrigin();
         if (!baseUrl) {
             return '';
         }
@@ -299,24 +238,14 @@ export class WebcliSettingsSettings {
             userBubble: normalizeHex(this.state.userBubble, buildThemeDefaults(this.state.theme).userBubble),
             agentBubble: normalizeHex(this.state.agentBubble, buildThemeDefaults(this.state.theme).agentBubble),
             headerColor: normalizeHex(this.state.headerColor, buildThemeDefaults(this.state.theme).headerColor),
-            mcpToken: normalizeString(mcpToken)
         };
 
         const query = toQuery(params);
         return `${baseUrl}/webCli/IDE-plugins/web-cli-chat/web-cli-chat.html?${query}`;
     }
 
-    async buildTokenizedEmbedUrl() {
-        const baseUrl = this.getNormalizedBaseUrl();
-        if (!baseUrl) {
-            return '';
-        }
-        const token = await requestMcpPublicToken(baseUrl);
-        return this.buildEmbedUrl(token);
-    }
-
     renderDerived() {
-        const validBaseUrl = Boolean(this.getNormalizedBaseUrl());
+        const validBaseUrl = Boolean(this.getOrigin());
         if (this.previewButton) {
             this.previewButton.disabled = !validBaseUrl;
         }
@@ -346,9 +275,9 @@ export class WebcliSettingsSettings {
     }
 
     openAdminWebchat() {
-        const baseUrl = this.getNormalizedBaseUrl();
+        const baseUrl = this.getOrigin();
         if (!baseUrl) {
-            this.state.status = 'Enter a valid Base URL first.';
+            this.state.status = 'Unable to determine browser origin.';
             this.state.statusType = 'error';
             this.renderStatus();
             return;
@@ -361,9 +290,9 @@ export class WebcliSettingsSettings {
 
     async openPreviewChat() {
         try {
-            const embedUrl = await this.buildTokenizedEmbedUrl();
+            const embedUrl = this.buildEmbedUrl();
             if (!embedUrl) {
-                this.state.status = 'Enter a valid Base URL first.';
+                this.state.status = 'Unable to determine browser origin.';
                 this.state.statusType = 'error';
                 this.renderStatus();
                 return;
@@ -381,9 +310,9 @@ export class WebcliSettingsSettings {
 
     async copyIframeCode() {
         try {
-            const embedUrl = await this.buildTokenizedEmbedUrl();
+            const embedUrl = this.buildEmbedUrl();
             if (!embedUrl) {
-                this.state.status = 'Enter a valid Base URL first.';
+                this.state.status = 'Unable to determine browser origin.';
                 this.state.statusType = 'error';
                 this.renderStatus();
                 return;
