@@ -10,6 +10,9 @@ The **webAdmin** agent is implemented as a Node.js CLI tool for site owners. It 
 ## Ploinky Agent Integration
 - **Manifest File**: `webAdmin/manifest.json`
 - **Purpose**: Declares runtime integration metadata so `webAdmin` can be executed as a Ploinky agent.
+- **Enablement Mode**: `webAdmin` must be enabled as a normal workspace agent (non-global). Do not run it through global Explorer-style enablement.
+  - Recommended: `ploinky enable agent webAdmin` (or `ploinky enable agent webassist/webAdmin`) and then start workspace normally.
+  - If enabled globally, `RecursiveSkilledAgent` may not register the intended orchestrator skill (`admin-flow`) for this agent context.
 - **Environment Contract** (`profiles.default.env`):
   - `SOUL_GATEWAY_API_KEY`: API key used for LLM calls through AchillesAgentLib.
   - `ACHILLES_DEBUG`: Enables AchillesAgentLib debug logging.

@@ -10,6 +10,9 @@ The **webCli** agent is implemented as a Node.js CLI tool with a single `session
 ## Ploinky Agent Integration
 - **Manifest File**: `webCli/manifest.json`
 - **Purpose**: Declares runtime integration metadata so `webCli` can be executed as a Ploinky agent.
+- **Enablement Mode**: `webCli` and `webAdmin` must be enabled as normal workspace agents (non-global). Do not run them through global Explorer-style enablement.
+  - Recommended: `ploinky enable agent webCli` and `ploinky enable agent webAdmin` (or repository-qualified forms), then start workspace normally.
+  - If enabled globally, `RecursiveSkilledAgent` may not register the intended orchestrator skill for the active agent context (`visitor-flow`/`admin-flow`).
 - **Environment Contract** (`profiles.default.env`):
   - `SOUL_GATEWAY_API_KEY`: API key used for LLM calls through AchillesAgentLib.
   - `ACHILLES_DEBUG`: Enables AchillesAgentLib debug logging.
