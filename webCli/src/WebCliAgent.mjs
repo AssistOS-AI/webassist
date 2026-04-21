@@ -56,7 +56,7 @@ function buildOrchestrationPrompt({ sessionId, message, context }) {
     ].join('\n');
 }
 
-function normalizeRuntimeResult(executionResult, fallbackSessionId) {
+function normalizeRuntimeResult(executionResult) {
     let payload = executionResult?.result;
     if (typeof payload === 'string') {
         try {
@@ -74,35 +74,11 @@ function normalizeRuntimeResult(executionResult, fallbackSessionId) {
         throw new Error('webCli orchestrator result must include a non-empty response.');
     }
 
-    const userMessageEnglish = String(payload.userMessageEnglish ?? '').trim();
-    const agentResponseEnglish = String(payload.agentResponseEnglish ?? '').trim();
-    if (!userMessageEnglish || !agentResponseEnglish) {
-        throw new Error('webCli orchestrator result must include English persistence fields.');
-    }
-
-    const sessionId = String(payload.sessionId ?? fallbackSessionId ?? '').trim();
-    if (!sessionId) {
-        throw new Error('webCli orchestrator result must include a sessionId.');
-    }
-
-    const lead = payload.lead && typeof payload.lead === 'object' && !Array.isArray(payload.lead)
-        ? payload.lead
-        : undefined;
-    const meeting = payload.meeting && typeof payload.meeting === 'object' && !Array.isArray(payload.meeting)
-        ? payload.meeting
-        : undefined;
-
     return {
-        success: payload.success !== false,
-        sessionId,
         response,
-        userMessageEnglish,
-        agentResponseEnglish,
         profiles: uniqueStrings(payload.profiles),
         profileDetails: uniqueStrings(payload.profileDetails),
         contactInformation: payload.contactInformation,
-        ...(lead ? { lead } : {}),
-        ...(meeting ? { meeting } : {}),
     };
 }
 
@@ -166,26 +142,22 @@ export async function createWebCliAgent({
                 },
             });
 
-            const normalized = normalizeRuntimeResult(execution, sessionId);
+            const normalized = normalizeRuntimeResult(execution);
 
             const sessionResult = await updateSession({
-                sessionId: normalized.sessionId,
-                userMessage: normalized.userMessageEnglish,
-                agentResponse: normalized.agentResponseEnglish,
+                sessionId,
+                userMessage: message,
+                agentResponse: normalized.response,
                 profiles: normalized.profiles,
                 profileDetails: normalized.profileDetails,
                 contactInformation: normalized.contactInformation,
             });
 
             return {
-                success: normalized.success,
-                sessionId: normalized.sessionId,
                 response: normalized.response,
                 profiles: normalized.profiles,
                 profileDetails: normalized.profileDetails,
                 contactInformation: normalized.contactInformation,
-                ...(normalized.lead ? { lead: normalized.lead } : {}),
-                ...(normalized.meeting ? { meeting: normalized.meeting } : {}),
                 session: sessionResult.session,
             };
         },

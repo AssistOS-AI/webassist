@@ -29,11 +29,7 @@ class FakeFlowSynthesisLLM extends LLMAgent {
             return {
                 tool: 'final_answer',
                 toolPrompt: JSON.stringify({
-                    success: true,
-                    sessionId,
                     response: 'Thanks. I still need one detail: what project timeline and expected outcomes do you have?',
-                    userMessageEnglish: 'I can share some papers later.',
-                    agentResponseEnglish: 'Thanks. I still need one detail: what project timeline and expected outcomes do you have?',
                     profiles: ['Researcher.md'],
                     profileDetails: [
                         'Interested in research collaboration',
@@ -53,11 +49,7 @@ class FakeFlowSynthesisLLM extends LLMAgent {
         return {
             tool: 'final_answer',
             toolPrompt: JSON.stringify({
-                success: true,
-                sessionId,
                 response: 'Great. What available datasets and student resources can you provide for collaboration?',
-                userMessageEnglish: 'Can we collaborate on AI research?',
-                agentResponseEnglish: 'Great. What available datasets and student resources can you provide for collaboration?',
                 profiles: ['Researcher.md'],
                 profileDetails: [
                     'Interested in research collaboration',

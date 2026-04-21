@@ -54,11 +54,7 @@ class FakeWebCliLLM extends LLMAgent {
         return {
             tool: 'final_answer',
             toolPrompt: JSON.stringify({
-                success: true,
-                sessionId,
                 response: 'Sigur — va putem ajuta cu integrarea API-ului. Mai jos gasiti linkul de programare.',
-                userMessageEnglish: 'Hello, I want to integrate your API. I am Alice, alice@example.com. Can we schedule a discussion?',
-                agentResponseEnglish: 'Sure — we can help with API integration. Below you can find the scheduling link.',
                 profiles: ['Developer.md'],
                 profileDetails: ['Evaluating an API integration', 'Provided email address'],
                 contactInformation: {
@@ -90,13 +86,10 @@ test('webCli agent loads AchillesAgentLib and executes a full visitor turn', asy
     });
 
     assert.equal(agent.achilles.libraryName, 'achillesAgentLib');
-    assert.equal(result.success, true);
     assert.match(result.response, /integrarea API-ului/);
     assert.deepEqual(result.profiles, ['Developer.md']);
     assert.equal(result.contactInformation.name, 'Alice Example');
     assert.equal(result.contactInformation.email, 'alice@example.com');
-    assert.equal('lead' in result, false);
-    assert.equal('meeting' in result, false);
     assert.ok(llmAgent.calls.length >= 3);
 
     const leadContent = await fs.readFile(

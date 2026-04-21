@@ -116,15 +116,21 @@ body {
 }
 
 .chat-close {
-    width: 28px;
-    height: 28px;
     border: 0;
-    border-radius: 8px;
-    background: rgba(255, 255, 255, 0.16);
-    color: #e5e7eb;
-    font: inherit;
-    font-weight: 700;
+    border-radius: 6px;
+    background: transparent;
+    color: #a5b4c7;
+    font-size: 16px;
+    line-height: 1;
+    padding: 4px;
     cursor: pointer;
+    opacity: 0.8;
+    transition: opacity 0.15s ease, color 0.15s ease;
+}
+
+.chat-close:hover {
+    opacity: 1;
+    color: #e5e7eb;
 }
 
 .chat-title {
