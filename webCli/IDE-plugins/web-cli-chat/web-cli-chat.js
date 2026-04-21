@@ -93,7 +93,7 @@ function sanitizeAgentText(rawText) {
 
 function loadSessionId(storageKey) {
     try {
-        const value = window.sessionStorage.getItem(storageKey);
+        const value = window.localStorage.getItem(storageKey);
         return typeof value === 'string' && value.trim() ? value.trim() : '';
     } catch {
         return '';
@@ -103,10 +103,10 @@ function loadSessionId(storageKey) {
 function persistSessionId(storageKey, sessionId) {
     try {
         if (typeof sessionId === 'string' && sessionId.trim()) {
-            window.sessionStorage.setItem(storageKey, sessionId.trim());
+            window.localStorage.setItem(storageKey, sessionId.trim());
             return;
         }
-        window.sessionStorage.removeItem(storageKey);
+        window.localStorage.removeItem(storageKey);
     } catch {
         // Ignore storage failures.
     }
@@ -182,6 +182,8 @@ function pickReadableTextColor(backgroundHex, dark = '#0f172a', light = '#f8fafc
     const luminance = relativeLuminance(rgb);
     return luminance > 0.5 ? dark : light;
 }
+
+const BROWSER_STORAGE_KEY = 'webcli-global-chat:sessionId';
 
 class WebCliMcpChatClient {
     constructor(options = {}) {
@@ -318,11 +320,11 @@ function mountChatSurface(rootNode, options = {}) {
     }
 
     const query = options.query || new URLSearchParams(window.location.search);
-    const storageKey = options.storageKey || 'webcli-global-chat:embedSessionId';
     const subtitleText = options.subtitleText || 'Embedded preview';
     const enableLauncher = options.enableLauncher === true;
     const validateTools = options.validateTools === true;
     const endpoint = '/mcps/webCli/mcp';
+    const storageKey = BROWSER_STORAGE_KEY;
     const chatClient = new WebCliMcpChatClient({ validateTools, endpoint });
 
     const theme = normalizeTheme(query.get('theme'));
@@ -544,7 +546,6 @@ export class WebCliChat {
         this.cleanup?.();
         this.cleanup = mountChatSurface(this.element, {
             subtitleText: 'Context-aware website chat',
-            storageKey: 'webcli-global-chat:tabSessionId',
             enableLauncher: false,
             validateTools: true,
         });
@@ -560,7 +561,6 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     if (document.getElementById('chatMessages')) {
         mountChatSurface(document, {
             subtitleText: 'Embedded preview',
-            storageKey: 'webcli-global-chat:embedSessionId',
             enableLauncher: true,
             validateTools: false,
         });

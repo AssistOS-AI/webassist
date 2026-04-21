@@ -1,4 +1,4 @@
-# DS010 - Skill: manage-site-info
+# DS009 - Skill: manage-site-info
 
 ## Goal
 Create, update, or display site information markdown files in `data/info/`.

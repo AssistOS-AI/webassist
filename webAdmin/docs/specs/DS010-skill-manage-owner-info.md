@@ -1,4 +1,4 @@
-# DS011 - Skill: manage-owner-info
+# DS010 - Skill: manage-owner-info
 
 ## Goal
 Create or update `data/config/owner.md` with owner contact information.

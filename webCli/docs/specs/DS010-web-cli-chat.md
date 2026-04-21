@@ -23,7 +23,7 @@ Define the active plugin contract for the Web CLI chat integration.
   - close button (`X`) in header closes panel.
 
 ## Runtime Contract
-- MCP endpoint: `/mcps/webCli/mcp`
+- MCP endpoint: `/mcps/webCli/mcp` (always; no token-based routing)
 - Tools:
   - `web_cli_chat` with `{ message, sessionId?, json: true }`
   - `web_cli_history` with `{ sessionId }`
@@ -32,3 +32,9 @@ Define the active plugin contract for the Web CLI chat integration.
   - session persistence,
   - history hydration,
   - typing/send UI behavior.
+
+## MCP Client
+- Client module: `/MCPBrowserClient.js`
+- Loaded dynamically via `import()`
+- Calls `callTool()` for chat and history operations
+- Parses tool responses to extract response text and sessionId

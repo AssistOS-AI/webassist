@@ -13,56 +13,47 @@ Define, in full detail, what `webcli-settings` can configure and how each settin
 ## Settings surface (`webcli-settings`)
 
 ### Available configuration fields
-1. **Base URL** (`#webcliBaseUrl`)
-   - Default value: `http://localhost:8080`
-   - Normalization:
-     - trims input,
-     - if protocol is missing, prepends `https://`,
-     - accepts only `http`/`https`,
-     - stores only `origin` (`protocol + host + port`).
-   - Validation effect:
-     - if invalid/empty, generated embed URL is empty,
-     - **Preview Chat** and **Copy iframe code** are disabled.
-
-2. **Theme** (`#webcliTheme`)
+1. **Theme** (`#webcliTheme`)
    - Allowed values: `light`, `dark`, `aqua`, `forest`, `amethyst`
    - Default: `light`
-   - On change, color fields are reset to theme defaults:
-      - `light`: background `#f2f7ff`, user bubble `#1e293b`, agent bubble `#f8fbff`, header `#0f172a`
-      - `dark`: background `#0f172a`, user bubble `#334155`, agent bubble `#1f2937`, header `#111827`
-      - `aqua`: background `#e6f7fb`, user bubble `#0b4f6c`, agent bubble `#d3edf5`, header `#0f3d53`
-      - `forest`: background `#0f1f17`, user bubble `#1f4d3a`, agent bubble `#1a2f24`, header `#102419`
-      - `amethyst`: background `#f4eeff`, user bubble `#5b3f8c`, agent bubble `#ece2ff`, header `#3e2a66`
+   - Each theme preset provides a coordinated palette for background, user bubble, agent bubble, and header colors.
+   - On change, color fields are reset to the selected theme's defaults.
 
-3. **Header Text** (`#webcliHeaderText`)
+2. **Header Text** (`#webcliHeaderText`)
    - Default: `WebCli Assistant`
    - Max length: `100`
    - Empty/whitespace falls back to default when URL/snippet is generated.
 
-4. **Subheader Text** (`#webcliSubtitleText`)
+3. **Subheader Text** (`#webcliSubtitleText`)
    - Default: `Embedded preview`
    - Max length: `120`
    - Empty/whitespace falls back to default when URL/snippet is generated.
 
-5. **Chat Background** (`#webcliChatBackground`)
+4. **Chat Background** (`#webcliChatBackground`)
    - Type: hex color (`#RRGGBB`)
    - Invalid values are rejected and previous valid/default value is kept.
 
-6. **User Bubble** (`#webcliUserBubble`)
+5. **User Bubble** (`#webcliUserBubble`)
    - Type: hex color (`#RRGGBB`)
    - Invalid values are rejected and previous valid/default value is kept.
 
-7. **Agent Bubble** (`#webcliAgentBubble`)
+6. **Agent Bubble** (`#webcliAgentBubble`)
    - Type: hex color (`#RRGGBB`)
    - Invalid values are rejected and previous valid/default value is kept.
 
-8. **Header Color** (`#webcliHeaderColor`)
+7. **Header Color** (`#webcliHeaderColor`)
    - Type: hex color (`#RRGGBB`)
    - Invalid values are rejected and previous valid/default value is kept.
+
+### Base URL auto-configuration
+- No Base URL input field exists in the settings form.
+- The Base URL is auto-derived from `window.location.origin` at runtime.
+- All actions that previously required a valid Base URL now use the browser's current origin.
+- If `window.location.origin` is unavailable or empty, actions report an appropriate error.
 
 ### Derived output from settings
 - Embed URL format:
-  - `{baseUrl}/webCli/IDE-plugins/web-cli-chat/web-cli-chat.html?{query}`
+  - `{origin}/webCli/IDE-plugins/web-cli-chat/web-cli-chat.html?{query}`
 - Query parameters included:
   - `theme`
   - `headerText`
@@ -76,24 +67,30 @@ Define, in full detail, what `webcli-settings` can configure and how each settin
 
 ### Settings actions
 1. **Admin Webchat**
-   - Opens `{baseUrl}/webchat?agent=webAdmin` in a new tab.
-   - Requires valid Base URL.
+   - Opens `{origin}/webchat?agent=webAdmin` in a new tab, where `origin` is `window.location.origin`.
+   - Requires available browser origin.
 
 2. **Preview Chat**
-   - Requests MCP public token from `{baseUrl}/mcp-public/webCli` (POST, authenticated context).
-   - Opens generated embed URL in a new tab with `mcpToken` query param.
-   - Requires valid Base URL.
+   - Uses `{origin}/webCli/IDE-plugins/web-cli-chat/web-cli-chat.html?{query}` as the embed URL.
+   - Opens embed URL in a new tab.
+   - Requires available browser origin.
 
 3. **Copy iframe code**
-   - Requests MCP public token from `{baseUrl}/mcp-public/webCli` (POST, authenticated context).
-   - Rebuilds iframe snippet using embed URL with `mcpToken` query param.
-   - Copies rebuilt iframe snippet to clipboard.
+   - Builds iframe snippet using embed URL derived from `window.location.origin` and current settings.
+   - The iframe snippet textarea is user-editable (not readonly).
+   - Copies iframe snippet to clipboard.
    - Uses `navigator.clipboard.writeText` when available, else `execCommand('copy')`.
-   - Requires valid Base URL.
+   - Requires available browser origin.
+
+### Iframe snippet textarea
+- Element: `#webcliIframeSnippet`
+- User-editable (not readonly).
+- Automatically populated when settings change.
+- Users can freely modify the content before copying.
 
 ### Status feedback messages
-- Error (invalid base URL / missing snippet):
-  - `Enter a valid Base URL first.`
+- Error (missing origin):
+  - `Unable to determine browser origin.`
 - Success:
   - `Admin webchat opened in a new tab.`
   - `Preview opened in a new tab.`
@@ -141,24 +138,22 @@ Define, in full detail, what `webcli-settings` can configure and how each settin
 
 ### MCP interaction contract
 - MCP client module: `/MCPBrowserClient.js`
-- Endpoint: `/mcps/webCli/mcp`
+- Endpoint: `/mcps/webCli/mcp` (always; no token-based routing)
 - Tools:
   - `web_cli_chat` with `{ message, sessionId?, json: true }`
   - `web_cli_history` with `{ sessionId }`
-- Endpoint selection:
-  - if `mcpToken` query param exists: `/mcp-public/webCli/{mcpToken}`
-  - otherwise: `/mcps/webCli/mcp`
 - Chat response parsing:
   - accepts plain JSON or JSON wrapped in text,
   - extracts assistant text from `message`/`response`/raw output,
   - strips CLI noise lines (`Session ID`, `Type exit...`, `you>` prompts).
 
 ### Session and history behavior
-- Session storage keys:
-  - embed mode default: `webcli-global-chat:embedSessionId`
-  - presenter mode default: `webcli-global-chat:tabSessionId`
+- Session storage key:
+  - `webcli-global-chat:sessionId` (single global key for all tabs and modes)
+- Persistence:
+  - `localStorage` is used (not `sessionStorage`), so the `sessionId` survives tab close and is shared across all open tabs in the same browser.
 - On successful chat response:
-  - if tool returns `sessionId`, it is persisted to `sessionStorage`.
+  - if tool returns `sessionId`, it is persisted to `localStorage`.
 - On startup:
   - if a stored `sessionId` exists, `web_cli_history` is called once to hydrate prior messages.
   - hydration is skipped if conversation messages already exist in the DOM.
