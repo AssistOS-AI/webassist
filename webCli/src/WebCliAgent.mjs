@@ -45,17 +45,6 @@ function buildBaseAgentOptions({ agentRoot, llmAgent, logger, sessionConfig, rec
     };
 }
 
-function buildOrchestrationPrompt({ sessionId, message, context }) {
-    return [
-        'WebCli visitor turn request.',
-        `Session ID: ${sessionId}`,
-        'User message:',
-        String(message),
-        'Context about the current session, existing profiles, website information:',
-        JSON.stringify(context ?? {}, null, 2),
-    ].join('\n');
-}
-
 function normalizeRuntimeResult(executionResult) {
     let payload = executionResult?.result;
     if (typeof payload === 'string') {
@@ -125,21 +114,9 @@ export async function createWebCliAgent({
                 sessionId,
             });
 
-            const execution = await recursiveAgent.executePrompt(buildOrchestrationPrompt({
-                sessionId,
-                message,
-                context,
-            }), {
+            const execution = await recursiveAgent.executePrompt(message, {
                 model: mode,
-                context: {
-                    sessionId,
-                    dataDir: resolvedDataDir,
-                    webcli: {
-                        sessionId,
-                        dataDir: resolvedDataDir,
-                        context,
-                    },
-                },
+                context,
             });
 
             const normalized = normalizeRuntimeResult(execution);

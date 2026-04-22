@@ -13,7 +13,7 @@ Load all visitor-turn context before orchestration starts, so the agentic loop r
 - **Output**:
   - `siteInfo` (array)
   - `profilesInfo` (array)
-  - `currentLeadState` (object)
+  - `currentLead` (object)
     - `exists` (boolean)
     - `leadId` (string)
     - `status` (string)
@@ -21,14 +21,13 @@ Load all visitor-turn context before orchestration starts, so the agentic loop r
     - `sessionId` (string)
     - `contactInfo` (object)
     - `summary` (string)
-  - `currentSessionState` (object)
+  - `sessionProfile` (object)
     - `profiles` (string[])
     - `profileDetails` (string[])
     - `contactInformation` (object)
-    - `history` (array, always empty in loaded context)
   - `combinedSiteInfo` (string)
   - `combinedProfilesInfo` (string)
-  - `currentSessionStateText` (string)
+  - `sessionProfileText` (string)
 
 ## Execution Logic
 1. Read markdown files from `data/info/`.
@@ -40,7 +39,7 @@ Load all visitor-turn context before orchestration starts, so the agentic loop r
 ## Session Memory Rule
 - `load-context` must not load session history dialogue from `{sessionId}-history.md`.
 - Session continuity is provided through `Profile` and `Profile Details` from `{sessionId}-profile.md`.
-- Lead existence and lead metadata are provided through `currentLeadState` from `{sessionId}-lead.md`.
+- Lead existence and lead metadata are provided through `currentLead` from `{sessionId}-lead.md`.
 - History files remain persisted separately by runtime for audit/admin consumers.
 
 ## Datastore Source

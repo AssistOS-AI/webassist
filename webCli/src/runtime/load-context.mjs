@@ -44,12 +44,11 @@ export async function loadContext({ sessionId }) {
     const sessionProfileFileName = getSessionProfileFileName(sessionId);
     const sessionLeadFileName = getSessionLeadFileName(sessionId);
     let sessionRecord = null;
-    let currentLeadState = null;
+    let currentLead = null;
     const emptyRecord = {
         profiles: [],
         profileDetails: [],
         contactInformation: {},
-        history: [],
     };
     const readSectionMap = async (type, fileName) => {
         try {
@@ -79,13 +78,12 @@ export async function loadContext({ sessionId }) {
                 profiles: store.parseList(profileRecord?.sections?.[SESSION_SECTIONS.PROFILE]),
                 profileDetails: store.parseList(profileRecord?.sections?.[SESSION_SECTIONS.PROFILE_DETAILS]),
                 contactInformation: store.parseKeyValue(profileRecord?.sections?.[SESSION_SECTIONS.CONTACT_INFORMATION]),
-                history: [],
             },
         };
     }
 
     if (!leadRecord) {
-        currentLeadState = {
+        currentLead = {
             exists: false,
             leadId: `${sessionLeadFileName}.md`,
             status: '',
@@ -97,7 +95,7 @@ export async function loadContext({ sessionId }) {
     } else {
         const leadInfo = store.parseKeyValue(leadRecord.sections?.[LEAD_SECTIONS.LEAD_INFO]);
         const contactInfo = store.parseKeyValue(leadRecord.sections?.[LEAD_SECTIONS.CONTACT_INFO]);
-        currentLeadState = {
+        currentLead = {
             exists: true,
             leadId: `${sessionLeadFileName}.md`,
             status: String(leadInfo?.[LEAD_FIELDS.STATUS] ?? '').trim(),
@@ -109,17 +107,15 @@ export async function loadContext({ sessionId }) {
     }
 
     return {
-        siteInfo: infoFiles,
-        profilesInfo: profileFiles,
-        currentLeadState,
-        currentSessionState: {
+        currentLead,
+        sessionProfile: {
             sessionId,
             isNewSession: !sessionRecord.exists,
             ...sessionRecord.parsed,
         },
         combinedSiteInfo: combineMarkdownFiles(infoFiles, 'Info') || 'No site info available.',
         combinedProfilesInfo: combineMarkdownFiles(profileFiles, 'Profile') || 'No profiling info available.',
-        currentSessionStateText: sessionRecord.exists
+        sessionProfileText: sessionRecord.exists
             ? sessionRecord.content.trim()
             : 'No previous session profile found. This is a new session.',
     };

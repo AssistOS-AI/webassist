@@ -25,7 +25,7 @@ To define the current automated test coverage for `webCli`, including the behavi
 ### 2) `load-context.runtime.test.mjs`
 - Verifies loading of `info/` and `profilesInfo/` markdown context.
 - Verifies session state parsing for existing and new sessions using profile file memory.
-- Verifies deterministic lead state loading for `sessionId` (`currentLeadState`).
+- Verifies deterministic lead state loading for `sessionId` (`currentLead`).
 - Verifies session history is not loaded into orchestration context.
 - Verifies normalized context payload structure returned by runtime module.
 

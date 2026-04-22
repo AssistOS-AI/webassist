@@ -38,30 +38,29 @@ test('load-context.runtime loads info, profile definitions, and parsed session s
 
     assert.equal(result.siteInfo.length, 2);
     assert.equal(result.profilesInfo.length, 2);
-    assert.equal(result.currentSessionState.isNewSession, false);
-    assert.deepEqual(result.currentSessionState.profiles, ['Developer.md']);
-    assert.deepEqual(result.currentSessionState.profileDetails, ['Asked about API integrations']);
-    assert.equal(result.currentSessionState.contactInformation.name, 'Session One');
-    assert.equal(result.currentSessionState.contactInformation.email, 'sess1@example.com');
-    assert.deepEqual(result.currentSessionState.history, []);
-    assert.equal(result.currentLeadState.exists, true);
-    assert.equal(result.currentLeadState.leadId, 'sess1-lead.md');
-    assert.equal(result.currentLeadState.profile, 'Developer');
-    assert.equal(result.currentLeadState.sessionId, 'sess1');
-    assert.equal(result.currentLeadState.contactInfo.email, 'sess1@example.com');
+    assert.equal(result.sessionProfile.isNewSession, false);
+    assert.deepEqual(result.sessionProfile.profiles, ['Developer.md']);
+    assert.deepEqual(result.sessionProfile.profileDetails, ['Asked about API integrations']);
+    assert.equal(result.sessionProfile.contactInformation.name, 'Session One');
+    assert.equal(result.sessionProfile.contactInformation.email, 'sess1@example.com');
+    assert.equal(result.currentLead.exists, true);
+    assert.equal(result.currentLead.leadId, 'sess1-lead.md');
+    assert.equal(result.currentLead.profile, 'Developer');
+    assert.equal(result.currentLead.sessionId, 'sess1');
+    assert.equal(result.currentLead.contactInfo.email, 'sess1@example.com');
     assert.match(result.combinedSiteInfo, /WebAssist builds AI-assisted websites/);
     assert.match(result.combinedProfilesInfo, /Profile: Developer/);
-    assert.doesNotMatch(result.currentSessionStateText, /Tell me about your API/);
-    assert.match(result.currentSessionStateText, /Session Profile/);
+    assert.doesNotMatch(result.sessionProfileText, /Tell me about your API/);
+    assert.match(result.sessionProfileText, /Session Profile/);
 
     const missingSessionResult = await loadContext({
         sessionId: 'new-session',
     });
-    assert.equal(missingSessionResult.currentSessionState.isNewSession, true);
-    assert.deepEqual(missingSessionResult.currentSessionState.contactInformation, {});
-    assert.equal(missingSessionResult.currentLeadState.exists, false);
+    assert.equal(missingSessionResult.sessionProfile.isNewSession, true);
+    assert.deepEqual(missingSessionResult.sessionProfile.contactInformation, {});
+    assert.equal(missingSessionResult.currentLead.exists, false);
     assert.match(
-        missingSessionResult.currentSessionStateText,
+        missingSessionResult.sessionProfileText,
         /No previous session profile found/
     );
 });

@@ -25,7 +25,7 @@ The runtime sends a prompt containing a JSON payload:
 
 ## Orchestration Contract
 1. Read context from runtime-provided input (`context` object in prompt JSON).
-   - Use `currentLeadState` as source of truth for existing lead data tied to `sessionId`.
+   - Use `currentLead` as source of truth for existing lead data tied to `sessionId`.
 2. Build an internal decision object (response draft, profiles, profileDetails, contactInformation).
 3. Ensure decision constraints:
    - use only profiles defined in `combinedProfilesInfo` as qualification candidates;
