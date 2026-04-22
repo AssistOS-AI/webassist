@@ -538,7 +538,6 @@ export class WebCliChat {
         this.element = element;
         this.invalidate = invalidate;
         this.cleanup = null;
-        this.invalidate();
     }
 
     beforeRender() {}
@@ -547,7 +546,7 @@ export class WebCliChat {
         this.cleanup?.();
         this.cleanup = mountChatSurface(this.element, {
             subtitleText: 'Context-aware website chat',
-            enableLauncher: true,
+            enableLauncher: false,
             validateTools: true,
         });
     }
