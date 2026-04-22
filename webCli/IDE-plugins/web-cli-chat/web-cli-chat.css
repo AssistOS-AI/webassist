@@ -1,4 +1,4 @@
-:root {
+:host {
     --chat-font: "Manrope", "Segoe UI", sans-serif;
     --chat-bg: #f2f7ff;
     --chat-header: #0f172a;
@@ -20,12 +20,12 @@
 
 * { box-sizing: border-box; }
 
-body {
+:host {
     margin: 0;
     font-family: var(--chat-font);
     background: transparent;
     color: var(--chat-base-text);
-    min-height: 100vh;
+    min-height: 0;
 }
 
 .chat-widget {

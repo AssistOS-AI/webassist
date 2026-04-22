@@ -2,7 +2,7 @@
     "pluginCategory": "application",
     "id": "webcli-chat",
     "component": "web-cli-chat",
-    "location": [],
+    "location": ["file-exp:global"],
     "label": "WebCli Chat",
     "tooltip": "Open WebCli chat",
     "icon": "./icon.svg",
