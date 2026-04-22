@@ -1,10 +1,10 @@
 # Ignore runtime data folders
-/webCli/data/
+/webAssist/data/
 /data/
 /webassist-shared/data/
-/webCli/package.json
-/webCli/package-lock.json
-/webCli/node_modules/
+/webAssist/package.json
+/webAssist/package-lock.json
+/webAssist/node_modules/
 
 /webAdmin/data/
 /webAdmin/package.json

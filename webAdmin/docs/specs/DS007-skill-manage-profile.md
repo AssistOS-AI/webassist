@@ -1,7 +1,7 @@
 # DS007 - Skill: manage-profile
 
 ## Goal
-Create or update a profiling template for the webCli agent in `data/profilesInfo/`.
+Create or update a profiling template for the webAssist agent in `data/profilesInfo/`.
 
 ## Mechanism
 A **cskill** executed through `RecursiveSkilledAgent` when the owner requests a new profile.
