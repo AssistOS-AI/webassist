@@ -20,3 +20,7 @@ yarn-error.log*
 # OS specific
 .DS_Store
 Thumbs.db
+# >>> ploinky default-skills >>>
+.claude/skills/
+.agents/skills/
+# <<< ploinky default-skills <<<
