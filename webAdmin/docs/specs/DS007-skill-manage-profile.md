@@ -4,7 +4,7 @@
 Create or update a profiling template for the webAssist agent in `data/profilesInfo/`.
 
 ## Mechanism
-A **cskill** executed through `RecursiveSkilledAgent` when the owner requests a new profile.
+A **cskill** executed through `MainAgent` when the owner requests a new profile.
 
 ## Tool Definition
 - **Name**: `manage-profile`

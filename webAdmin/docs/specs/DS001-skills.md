@@ -4,17 +4,17 @@ The **webAdmin** agent interacts with the information collected by **webAssist**
 
 Runtime dependency note:
 - `webAdmin` uses AchillesAgentLib via direct package import from `node_modules`.
-- The agent runtime composes a `RecursiveSkilledAgent` instance imported from `achillesAgentLib`.
+- The agent runtime composes a `MainAgent` instance imported from `achillesAgentLib`.
 
 Skill runtime note:
 - Operational webAdmin skills are implemented as **cskills** (`cskill.md` + `src/index.mjs`).
-- They are discovered and registered from `webAdmin/skills/` by `RecursiveSkilledAgent`.
-- Execution is routed through `RecursiveSkilledAgent` skill execution APIs.
+- They are discovered and registered from `webAdmin/skills/` by `MainAgent`.
+- Execution is routed through `MainAgent` skill execution APIs.
 - File persistence is handled through `MarkdownDataStore` (AchillesAgentLib) with numbered markdown sections (`### N. Section Name`).
 - Skill payloads expose domain data and optional `error` fields; they do not rely on `success` flags.
 - Skills also include `message` text fields so loop-session planners receive human-readable execution outcomes alongside structured data.
-- Owner requests are orchestrated by the `admin-flow` **oskills**.
-  - `admin-flow` returns a plain-text response string for the owner in structured, user-friendly formatting.
+- Owner requests are orchestrated by the `admin-flow` system prompt.
+  - The system prompt returns a plain-text response string for the owner in structured, user-friendly formatting.
 
 ## Skill: update-lead
 - **Function**: Manages the lifecycle of a lead in `leads/`.
@@ -41,6 +41,6 @@ Skill runtime note:
 ## Skill: manage-owner-info
 - **Function**: Creates or updates `data/config/owner.md` with owner contact information.
 
-## Skill: admin-flow
+## System Prompt: admin-flow
 - **Function**: Orchestrates owner requests by selecting and executing exactly one admin skill per turn.
 - **Context Preload**: Receives preloaded profiles list, owner info, and website info at every iteration.

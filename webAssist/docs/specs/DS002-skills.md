@@ -4,20 +4,21 @@ The **webAssist** agent uses specific skills to manage the conversation flow and
 
 ## Skill Type and Runtime Orchestration
 - All webAssist runtime skills are implemented as **cskills** (`cskill.md` + `src/index.mjs`).
-- webAssist runtime orchestration is implemented through one **oskill** (`visitor-flow/oskill.md`).
-- Skills are discovered and registered by `RecursiveSkilledAgent` from `webAssist/skills/`.
-- Runtime execution is routed through `RecursiveSkilledAgent` (no direct hardcoded skill sequence in `WebAssistAgent`).
+- Runtime orchestration instructions are provided through a dedicated system prompt file.
+- Skills are discovered and registered by `MainAgent` from `webAssist/skills/`.
+- Runtime execution is routed through `MainAgent` (no direct hardcoded skill sequence in `WebAssistAgent`).
 
 ## Runtime Modules (Non-skill)
 - `load-context` runs before orchestration to gather info/profile/session state and deterministic lead state for the current `sessionId`.
-- `update-session` runs after orchestration to persist profile and history updates.
+- `update-session` runtime functions are used in two stages:
+  - `updateSessionProfile` is invoked by `update-session-profile` cskill during orchestration.
+  - `appendSessionTurn` is invoked automatically by runtime after final answer.
 - These modules live in `webAssist/src/runtime/` and are not registered as cskills.
 
-## Orchestrator: visitor-flow
+## System Prompt: visitor-flow
 - **Function**: Coordinates one full visitor turn using the skill allowlist.
-- **Allowed Skills**: `create-lead`, `book-meeting`.
-- **Session Type**: loop session.
-- **Guarantee**: Returns persistence payload (`response`, `profiles`, `profileDetails`, `contactInformation`, English persistence fields) consumed by runtime `update-session`.
+- **Allowed Skills**: `create-lead`, `book-meeting`, `update-session-profile`.
+- **Guarantee**: Persists profile memory fields (`profiles`, `profileDetails`, `contactInformation`, English persistence fields) through `update-session-profile` before final answer; runtime appends user/agent turn history after final answer.
 - **Continuity Rule**: Conversation progression is encoded directly in orchestrator-authored `profileDetails`; runtime does not synthesize flow fields.
 
 ## Skill: create-lead

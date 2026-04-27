@@ -1,83 +1,55 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { RecursiveSkilledAgent } from 'achillesAgentLib';
+import { MainAgent } from 'achillesAgentLib';
+import { VISITOR_FLOW_SYSTEM_PROMPT } from './prompts/visitor-flow-system-prompt.mjs';
 import { loadContext } from './runtime/load-context.mjs';
+import { appendSessionTurn } from './runtime/update-session.mjs';
 import { configureDataStore, getConfiguredDataDir } from './runtime/dataStore.mjs';
-import { updateSession } from './runtime/update-session.mjs';
 
 function getDefaultAgentRoot() {
     return path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 }
 
-function uniqueStrings(values) {
-    const seen = new Set();
-    const result = [];
-
-    for (const value of values ?? []) {
-        const normalized = typeof value === 'string' ? value.trim() : '';
-        if (!normalized || seen.has(normalized)) {
-            continue;
-        }
-        seen.add(normalized);
-        result.push(normalized);
-    }
-
-    return result;
-}
-
-function buildBaseAgentOptions({ agentRoot, llmAgent, logger, sessionConfig, recursiveAgentOptions }) {
+function buildBaseAgentOptions({ agentRoot, logger, mainAgentOptions }) {
     const explicitSkillRoot = path.join(agentRoot, 'skills');
-    const requestedSkillRoots = Array.isArray(recursiveAgentOptions?.additionalSkillRoots)
-        ? recursiveAgentOptions.additionalSkillRoots
+    const requestedSkillRoots = Array.isArray(mainAgentOptions?.additionalSkillRoots)
+        ? mainAgentOptions.additionalSkillRoots
         : [];
     const additionalSkillRoots = [explicitSkillRoot, ...requestedSkillRoots]
         .filter((value, index, all) => value && all.indexOf(value) === index);
 
     return {
-        llmAgent,
         logger,
         startDir: agentRoot,
-        searchUpwards: false,
-        sessionConfig,
         additionalSkillRoots,
-        ...(recursiveAgentOptions ?? {}),
+        ...(mainAgentOptions ?? {}),
     };
 }
 
-function normalizeRuntimeResult(executionResult) {
-    let payload = executionResult?.result;
-    if (typeof payload === 'string') {
-        try {
-            payload = JSON.parse(payload);
-        } catch {
-            payload = { response: payload };
-        }
-    }
-    if (!payload || typeof payload !== 'object') {
-        throw new Error('webAssist orchestrator must return an object result.');
-    }
-
-    const response = String(payload.response ?? '').trim();
-    if (!response) {
-        throw new Error('webAssist orchestrator result must include a non-empty response.');
-    }
-
-    return {
-        response,
-        profiles: uniqueStrings(payload.profiles),
-        profileDetails: uniqueStrings(payload.profileDetails),
-        contactInformation: payload.contactInformation,
-    };
+function buildRuntimePrompt({ message, loadedContext }) {
+    return [
+        'User message:',
+        String(message),
+        'Session profile:',
+        JSON.stringify(loadedContext.sessionProfile ?? {}, null, 2),
+        'Current lead:',
+        JSON.stringify(loadedContext.currentLead ?? {}, null, 2),
+        'Session profile markdown snapshot:',
+        String(loadedContext.sessionProfileText ?? ''),
+        'Known profile templates:',
+        String(loadedContext.combinedProfilesInfo ?? 'No profiling info available.'),
+        'Website info snapshot:',
+        String(loadedContext.combinedSiteInfo ?? 'No site info available.'),
+    ].join('\n');
 }
 
 export async function createWebAssistAgent({
     agentRoot = getDefaultAgentRoot(),
     dataDir = null,
     llmAgent = null,
-    logger = console,
-    sessionConfig = {},
-    recursiveAgentOptions = {},
+    logger = null,
+    mainAgentOptions = {},
 } = {}) {
     const resolvedAgentRoot = path.resolve(agentRoot);
     configureDataStore({
@@ -86,13 +58,15 @@ export async function createWebAssistAgent({
     });
     const resolvedDataDir = getConfiguredDataDir();
 
-    const recursiveAgent = new RecursiveSkilledAgent(buildBaseAgentOptions({
+    const mainAgent = new MainAgent(buildBaseAgentOptions({
         agentRoot: resolvedAgentRoot,
-        llmAgent,
         logger,
-        sessionConfig,
-        recursiveAgentOptions,
+        mainAgentOptions,
     }));
+    if (llmAgent) {
+        mainAgent.llmAgent = llmAgent;
+        mainAgent.subsystemFactory.setLLMAgent(llmAgent);
+    }
 
     return {
         achilles: {
@@ -101,8 +75,8 @@ export async function createWebAssistAgent({
         },
         agentRoot: resolvedAgentRoot,
         dataDir: resolvedDataDir,
-        recursiveAgent,
-        async handleMessage({ sessionId, message, mode = 'fast' }) {
+        mainAgent,
+        async handleMessage({ sessionId, message, mode = 'plan' }) {
             if (!sessionId) {
                 throw new Error('webAssist.handleMessage requires a sessionId.');
             }
@@ -110,32 +84,34 @@ export async function createWebAssistAgent({
                 throw new Error('webAssist.handleMessage requires a message.');
             }
 
-            const context = await loadContext({
+            const loadedContext = await loadContext({
                 sessionId,
             });
-
-            const execution = await recursiveAgent.executePrompt(message, {
-                model: mode,
-                context,
+            const runtimePrompt = buildRuntimePrompt({
+                message,
+                loadedContext,
             });
 
-            const normalized = normalizeRuntimeResult(execution);
+            const execution = await mainAgent.executePrompt(runtimePrompt, {
+                sessionId,
+                model: mode,
+                systemPrompt: VISITOR_FLOW_SYSTEM_PROMPT,
+            });
 
-            const sessionResult = await updateSession({
+            const response = String(execution.result ?? '').trim();
+            if (!response) {
+                throw new Error('webAssist orchestrator result must include a non-empty response.');
+            }
+
+            await appendSessionTurn({
                 sessionId,
                 userMessage: message,
-                agentResponse: normalized.response,
-                profiles: normalized.profiles,
-                profileDetails: normalized.profileDetails,
-                contactInformation: normalized.contactInformation,
+                agentResponse: response,
             });
 
             return {
-                response: normalized.response,
-                profiles: normalized.profiles,
-                profileDetails: normalized.profileDetails,
-                contactInformation: normalized.contactInformation,
-                session: sessionResult.session,
+                response,
+                sessionId,
             };
         },
     };

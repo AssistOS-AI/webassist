@@ -8,6 +8,6 @@
 - [Skill: statistics](./specsLoader.html?spec=DS005-skill-statistics.md)
 - [Skill: news](./specsLoader.html?spec=DS006-skill-news.md)
 - [Skill: manage-profile](./specsLoader.html?spec=DS007-skill-manage-profile.md)
-- [Skill: admin-flow](./specsLoader.html?spec=DS008-skill-admin-flow.md)
+- [System Prompt: admin-flow](./specsLoader.html?spec=DS008-skill-admin-flow.md)
 - [Skill: manage-site-info](./specsLoader.html?spec=DS009-skill-manage-site-info.md)
 - [Skill: manage-owner-info](./specsLoader.html?spec=DS010-skill-manage-owner-info.md)

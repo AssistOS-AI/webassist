@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { configureDataStore } from '../src/runtime/dataStore.mjs';
-import { updateSession } from '../src/runtime/update-session.mjs';
+import { appendSessionTurn, updateSessionProfile } from '../src/runtime/update-session.mjs';
 import { getSessionHistory } from '../src/mcp/get-session-history.mjs';
 import { createWebAssistSandbox } from './helpers.mjs';
 
@@ -15,19 +15,25 @@ test('web_cli_history returns parsed session history for existing sessions', asy
         dataDir: sandbox.dataDir,
     });
 
-    await updateSession({
+    await updateSessionProfile({
         sessionId: 'history-sess-1',
-        userMessage: 'Hello there',
-        agentResponse: 'Hi! How can I help today?',
         profiles: ['Developer.md'],
         profileDetails: ['Interested in API integration'],
     });
-    await updateSession({
+    await appendSessionTurn({
+        sessionId: 'history-sess-1',
+        userMessage: 'Hello there',
+        agentResponse: 'Hi! How can I help today?',
+    });
+    await updateSessionProfile({
+        sessionId: 'history-sess-1',
+        profiles: ['Developer.md'],
+        profileDetails: ['Asks about pricing'],
+    });
+    await appendSessionTurn({
         sessionId: 'history-sess-1',
         userMessage: 'I need pricing details',
         agentResponse: 'Sure. Which team size are you targeting?',
-        profiles: ['Developer.md'],
-        profileDetails: ['Asks about pricing'],
     });
 
     const result = await getSessionHistory({

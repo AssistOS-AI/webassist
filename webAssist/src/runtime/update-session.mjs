@@ -49,21 +49,18 @@ function renderContactInformation(contactInformation) {
     return normalized || '*None*';
 }
 
-export async function updateSession({
+export async function updateSessionProfile({
     sessionId,
-    userMessage,
-    agentResponse,
     profiles,
     profileDetails,
     contactInformation,
 }) {
-    if (!sessionId || !userMessage || !agentResponse) {
-        throw new Error('update-session requires sessionId, userMessage, and agentResponse.');
+    if (!sessionId) {
+        throw new Error('update-session profile requires sessionId.');
     }
 
     const store = getDataStore();
     const profileFileName = getSessionProfileFileName(sessionId);
-    const historyFileName = getSessionHistoryFileName(sessionId);
     const nextProfiles = uniqueStrings(profiles);
     const nextProfileDetails = uniqueStrings(profileDetails);
     let existingContactInformationSection = '*None*';
@@ -89,6 +86,40 @@ export async function updateSession({
             nextContactInformationSection = renderContactInformation(contactInformation);
         }
     }
+
+    await store.replaceFile(DATASTORE_TYPES.SESSIONS, profileFileName, {
+        [SESSION_SECTIONS.PROFILE]: store.renderList(nextProfiles),
+        [SESSION_SECTIONS.PROFILE_DETAILS]: store.renderList(nextProfileDetails),
+        [SESSION_SECTIONS.CONTACT_INFORMATION]: nextContactInformationSection,
+    });
+
+    const savedProfile = await store.getSectionMap(DATASTORE_TYPES.SESSIONS, profileFileName);
+    const parsedContactInformation = store.parseKeyValue(savedProfile.sections?.[SESSION_SECTIONS.CONTACT_INFORMATION]);
+
+    return {
+        success: true,
+        sessionId,
+        sessionProfilePath: `${profileFileName}.md`,
+        sessionProfile: {
+            profiles: nextProfiles,
+            profileDetails: nextProfileDetails,
+            contactInformation: parsedContactInformation,
+            profileRawContent: savedProfile.rawMarkdown,
+        },
+    };
+}
+
+export async function appendSessionTurn({
+    sessionId,
+    userMessage,
+    agentResponse,
+}) {
+    if (!sessionId || !userMessage || !agentResponse) {
+        throw new Error('update-session history requires sessionId, userMessage, and agentResponse.');
+    }
+
+    const store = getDataStore();
+    const historyFileName = getSessionHistoryFileName(sessionId);
     const historyAppend = store.renderDialogue([
         { speaker: 'User', message: userMessage },
         { speaker: 'Agent', message: agentResponse },
@@ -103,11 +134,6 @@ export async function updateSession({
         }
     }
 
-    await store.replaceFile(DATASTORE_TYPES.SESSIONS, profileFileName, {
-        [SESSION_SECTIONS.PROFILE]: store.renderList(nextProfiles),
-        [SESSION_SECTIONS.PROFILE_DETAILS]: store.renderList(nextProfileDetails),
-        [SESSION_SECTIONS.CONTACT_INFORMATION]: nextContactInformationSection,
-    });
     await store.replaceFile(DATASTORE_TYPES.SESSIONS, historyFileName, {
         [SESSION_SECTIONS.HISTORY]: existingHistory,
     });
@@ -116,27 +142,20 @@ export async function updateSession({
             [SESSION_SECTIONS.HISTORY]: historyAppend,
         },
     });
-    const savedProfile = await store.getSectionMap(DATASTORE_TYPES.SESSIONS, profileFileName);
+
     const savedHistory = await store.getSectionMap(DATASTORE_TYPES.SESSIONS, historyFileName);
     const parsedHistory = store.parseDialogue(savedHistory.sections[SESSION_SECTIONS.HISTORY]).map((entry) => ({
         role: entry.speaker.toLowerCase(),
         message: entry.message,
     }));
-    const parsedContactInformation = store.parseKeyValue(savedProfile.sections?.[SESSION_SECTIONS.CONTACT_INFORMATION]);
 
     return {
         success: true,
         sessionId,
-        sessionProfilePath: `${profileFileName}.md`,
         sessionHistoryPath: `${historyFileName}.md`,
-        session: {
-            profiles: nextProfiles,
-            profileDetails: nextProfileDetails,
-            contactInformation: parsedContactInformation,
+        sessionHistory: {
             history: parsedHistory,
-            profileRawContent: savedProfile.rawMarkdown,
             historyRawContent: savedHistory.rawMarkdown,
-            rawContent: [savedProfile.rawMarkdown, savedHistory.rawMarkdown].filter(Boolean).join('\n\n'),
         },
     };
 }

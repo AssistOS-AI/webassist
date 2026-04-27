@@ -12,7 +12,7 @@ The **webAssist** agent is implemented as a Node.js CLI tool with a single `sess
 - **Purpose**: Declares runtime integration metadata so `webAssist` can be executed as a Ploinky agent.
 - **Enablement Mode**: `webAssist` and `webAdmin` must be enabled as normal workspace agents (non-global). Do not run them through global Explorer-style enablement.
   - Recommended: `ploinky enable agent webAssist` and `ploinky enable agent webAdmin` (or repository-qualified forms), then start workspace normally.
-  - If enabled globally, `RecursiveSkilledAgent` may not register the intended orchestrator skill for the active agent context (`visitor-flow`/`admin-flow`).
+  - If enabled globally, runtime discovery may register an unintended skill set.
 - **Environment Contract** (`profiles.default.env`):
   - `SOUL_GATEWAY_API_KEY`: API key used for LLM calls through AchillesAgentLib.
   - `ACHILLES_DEBUG`: Enables AchillesAgentLib debug logging.
@@ -81,26 +81,25 @@ MCP input note:
 - **Mandatory Usage**: Access to LLMs must be through this library.
 - **Import Mechanism**: The runtime imports AchillesAgentLib directly from resolved `node_modules`.
 - **Loading Logic**:
-  - Use direct import syntax: `import { RecursiveSkilledAgent, MarkdownDataStore } from "achillesAgentLib";`.
+  - Use direct import syntax: `import { MainAgent, MarkdownDataStore } from "achillesAgentLib";`.
   - Do not use filesystem scanning loaders for webAssist Achilles resolution.
 
-## Base Class: RecursiveSkilledAgent
-- **Functionality**: The runtime uses a single `RecursiveSkilledAgent` instance (composition) to manage discovery and execution.
+## Base Class: MainAgent
+- **Functionality**: The runtime uses a single `MainAgent` instance (composition) to manage discovery and execution.
 
 ## cskill Discovery and Execution
 - webAssist skills under `webAssist/skills/` are implemented as Achilles **cskills**.
-- webAssist includes one Achilles **oskill** (`visitor-flow`) that orchestrates the turn.
-- At startup, `RecursiveSkilledAgent` is initialized with `startDir = webAssist/` and discovers cskills from `webAssist/skills/`.
-- Skill discovery for webAssist runtime must use `searchUpwards: false`.
-- During runtime, webAssist calls `RecursiveSkilledAgent.executePrompt(...)` without explicit skill name.
-- `RecursiveSkilledAgent` selects `visitor-flow`, and that orchestrator invokes cskills as needed.
-- `visitor-flow` encapsulates former decision/final-response/history-translation prompt rules as orchestrator instructions.
+- At startup, `MainAgent` is initialized with `startDir = webAssist/` and discovers cskills from `webAssist/skills/`.
+- During runtime, webAssist calls `MainAgent.executePrompt(...)`.
+- `systemPrompt` is loaded from `webAssist/src/prompts/visitor-flow-system-prompt.mjs` and remains static per session.
+- Dynamic context (`sessionProfile`, `currentLead`, site/profile snapshots) is appended into the runtime prompt together with `User message` on every turn.
 
 ## Runtime Pre/Post Modules
 - Before orchestration, webAssist runs runtime module `load-context` from `webAssist/src/runtime/load-context.mjs`.
-- The loaded context is embedded in the orchestration prompt and forwarded in execution context.
-- After orchestration returns, webAssist runs runtime module `update-session` from `webAssist/src/runtime/update-session.mjs`.
-- Session persistence is therefore explicit runtime behavior, not a cskill invocation.
+- This module returns dynamic context values used by the runtime prompt.
+- Session persistence is split:
+  - `update-session-profile` cskill invokes runtime `updateSessionProfile` for profile memory.
+  - runtime invokes `appendSessionTurn` automatically after final answer for dialogue history.
 - Runtime data access is centralized through `webAssist/src/runtime/dataStore.mjs`.
 - The datastore is configured exactly once when `createWebAssistAgent(...)` is initialized (default `<repo>/data`, or CLI `--data-dir` override).
 - Runtime modules and skills only consume the configured datastore instance and must not accept per-call datastore overrides.
@@ -109,10 +108,10 @@ MCP input note:
 
 ## CLI Delegation Flow
 - The Node.js launcher `webAssist/src/index.mjs` initializes `WebAssistAgent` and executes conversation turns.
-- `WebAssistAgent` initializes one `RecursiveSkilledAgent` instance and delegates each turn through `executePrompt(...)`.
+- `WebAssistAgent` initializes one `MainAgent` instance and delegates each turn through `executePrompt(...)`.
 - In interactive mode, the launcher calls the runtime repeatedly (one call per turn) while preserving the same `sessionId`.
 - In MCP mode, the launcher performs a single runtime call and exits.
-- The sessionId is forwarded to `RecursiveSkilledAgent` to isolate multi-user sessions in a shared agent instance.
+- The sessionId is forwarded to `MainAgent` to isolate multi-user sessions in a shared agent instance.
 
 ## Communication Language
 - **Input/Output**: Communication with the visitor can be in any language.

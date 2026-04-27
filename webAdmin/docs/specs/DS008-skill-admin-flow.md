@@ -1,15 +1,13 @@
-# DS008 - Skill: admin-flow
+# DS008 - System Prompt: admin-flow
 
 ## Goal
 Orchestrate a single owner request by selecting and executing exactly one admin skill, then returning the final owner-facing response.
 
 ## Mechanism
-An **oskill** executed through `RecursiveSkilledAgent` on every owner turn.
+A static system prompt passed into `MainAgent.executePrompt(...)` on every owner turn.
 
-## Tool Definition
-- **Name**: `admin-flow`
-- **Description**: Executes one of the admin skills (`news`, `statistics`, `lead-info`, `update-lead`, `manage-profile`, `manage-site-info`, `manage-owner-info`) based on the owner request.
-- **Session Type**: Loop
+## Description
+Executes one of the admin skills (`news`, `statistics`, `lead-info`, `update-lead`, `manage-profile`, `manage-site-info`, `manage-owner-info`) based on the owner request.
 
 ## Inputs
 The runtime prompt includes:
@@ -27,7 +25,7 @@ The runtime prompt includes:
 ## Execution Logic (Node.js)
 1. Parse the owner message and identify which admin skill should be executed.
 2. Build the skill arguments (apply defaults when needed and validate required fields).
-3. Execute the selected skill via `RecursiveSkilledAgent` (inputs in English).
+3. Execute the selected skill via `MainAgent` (inputs in English).
 4. Read skill output (`message` + domain data or `error`) and draft the final owner-facing response in a structured, user-friendly format.
 5. If skill output includes `error`, report it clearly in owner language without altering error meaning.
 6. Return only the response string.

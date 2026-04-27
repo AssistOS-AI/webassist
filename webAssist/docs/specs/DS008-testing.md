@@ -19,7 +19,7 @@ To define the current automated test coverage for `webAssist`, including the beh
 ### 1) `agent.test.mjs`
 - Verifies end-to-end visitor turn handling through `createWebAssistAgent(...).handleMessage(...)`.
 - Confirms Achilles library import from `node_modules` via `achillesAgentLib` package resolution.
-- Confirms runtime delegation through `RecursiveSkilledAgent.executePrompt(...)` and orchestrator-driven tool routing.
+- Confirms runtime delegation through `MainAgent.executePrompt(...)`, `systemPrompt` usage, and cskill tool routing.
 - Verifies lead persistence and session persistence with expected markdown sections and content, including session `Contact Information`.
 
 ### 2) `load-context.runtime.test.mjs`

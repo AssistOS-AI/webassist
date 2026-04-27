@@ -4,7 +4,7 @@
 To provide the site owner with immediate awareness of the most recent interactions that resulted in new leads.
 
 ## Mechanism
-A **cskill** executed through `RecursiveSkilledAgent` when queried about recent lead activity.
+A **cskill** executed through `MainAgent` when queried about recent lead activity.
 
 ## Tool Definition
 - **Name**: `news`

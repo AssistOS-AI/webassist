@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { createWebAssistSandbox } from './helpers.mjs';
-import { updateSession } from '../src/runtime/update-session.mjs';
+import { updateSessionProfile } from '../src/runtime/update-session.mjs';
 import { loadContext } from '../src/runtime/load-context.mjs';
 import { configureDataStore } from '../src/runtime/dataStore.mjs';
 import { action as createLeadAction } from '../skills/create-lead/src/index.mjs';
@@ -12,10 +12,8 @@ test('load-context.runtime loads info, profile definitions, and parsed session s
     t.after(async () => sandbox.cleanup());
     configureDataStore({ agentRoot: sandbox.agentRoot, dataDir: sandbox.dataDir });
 
-    await updateSession({
+    await updateSessionProfile({
         sessionId: 'sess1',
-        userMessage: 'Tell me about your API.',
-        agentResponse: 'We provide API integrations for product teams.',
         profiles: ['Developer.md'],
         profileDetails: ['Asked about API integrations'],
         contactInformation: {

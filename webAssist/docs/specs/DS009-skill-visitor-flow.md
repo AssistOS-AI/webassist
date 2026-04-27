@@ -1,30 +1,27 @@
-# DS009 - Skill: visitor-flow
+# DS009 - System Prompt: visitor-flow
 
 ## Goal
-Coordinate one complete visitor turn through Achilles orchestration so `webAssist` runtime does not hardcode skill calls in application code.
+Coordinate one complete visitor turn through Achilles `MainAgent` with a static system prompt so `webAssist` runtime does not hardcode skill calls in application code.
 
 ## Mechanism
-This skill is implemented as an **oskill** and is selected by `RecursiveSkilledAgent` when handling visitor messages without an explicit `skillName`.
+The `visitor-flow` behavior is defined in `webAssist/src/prompts/visitor-flow-system-prompt.mjs` and passed into `MainAgent.executePrompt(..., { systemPrompt })`.
 
-## Tool Definition
-- **Name**: `visitor-flow`
-- **Session Type**: `loop`
-- **Allowed Skills**:
-  - `create-lead`
-  - `book-meeting`
+## Allowed Skills
+- `create-lead`
+- `book-meeting`
+- `update-session-profile`
 
 ## Input Contract
-The runtime sends a prompt containing a JSON payload:
-
-```json
-{
-  "sessionId": "...",
-  "message": "..."
-}
-```
+The runtime prompt includes explicit sections with:
+- User message
+- Session profile object
+- Current lead object
+- Session profile markdown snapshot
+- Combined profiles catalog text
+- Combined site info text
 
 ## Orchestration Contract
-1. Read context from runtime-provided input (`context` object in prompt JSON).
+1. Read context from runtime-provided input sections.
    - Use `currentLead` as source of truth for existing lead data tied to `sessionId`.
 2. Build an internal decision object (response draft, profiles, profileDetails, contactInformation).
 3. Ensure decision constraints:
@@ -39,18 +36,13 @@ The runtime sends a prompt containing a JSON payload:
    - `profileDetails` must include what the agent asked, what the user answered, pending questions, and profile-relevant discussed aspects;
    - if no profile matches after multiple attempts, switch to dismissive mode (website-only answers, no profiling questions) until new profile-relevant evidence appears;
    - when info is missing, answer current question and ask exactly one strategic follow-up question.
-4. Build final visitor response in visitor language.
-5. Return a final JSON payload through `final_answer`.
+4. Call `update-session-profile` with `{ sessionId, profiles, profileDetails, contactInformation }` before final answer.
+5. Build final visitor response in visitor language.
+6. Return plain-text final answer through `final_answer`.
 
 ## Runtime Continuity Rule
-`webAssist` runtime does not synthesize flow markers. Conversational continuity is authored directly by orchestrator through `profileDetails`. History files remain persisted for audit and admin consumers.
+`webAssist` runtime does not synthesize flow markers. Conversational continuity is authored directly by orchestrator through `profileDetails`. History files are appended by runtime after final answer for audit and admin consumers.
 
 ## Output Contract
-The orchestrator must end with a JSON object containing:
-- `response`
-- `profiles`
-- `profileDetails`
-- `contactInformation`
-
-The runtime passes `sessionId` and `message` directly from the incoming request; the orchestrator does not return them.
-This payload is normalized by `webAssist/src/WebAssistAgent.mjs`; runtime `update-session` persists and appends `session` in the final response returned to callers.
+The orchestrator must end with a plain-text visitor response string.
+Persistence payload fields are passed to `update-session-profile` tool before the final answer.

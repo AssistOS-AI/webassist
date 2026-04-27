@@ -9,6 +9,6 @@
 - [Skill: create-lead](./specsLoader.html?spec=DS006-skill-create-lead.md)
 - [Skill: book-meeting](./specsLoader.html?spec=DS007-skill-book-meeting.md)
 - [webAssist Testing](./specsLoader.html?spec=DS008-testing.md)
-- [Skill: visitor-flow](./specsLoader.html?spec=DS009-skill-visitor-flow.md)
+- [System Prompt: visitor-flow](./specsLoader.html?spec=DS009-skill-visitor-flow.md)
 - [web-assist-chat](./specsLoader.html?spec=DS010-web-assist-chat.md)
 - [web-assist-chat settings and interaction contract](./specsLoader.html?spec=DS011-web-assist-chat-settings-and-interaction.md)

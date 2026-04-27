@@ -64,5 +64,5 @@ History remains persisted for audit and admin-side analysis, but it is not loade
 
 ## Lead File Lookup Rule
 - Lead files are deterministic per session: `{sessionId}-lead.md` in `leads/`.
-- Runtime `load-context` resolves this file and exposes `currentLead` to orchestrator.
+- Runtime `load-context` resolves this file and exposes `currentLead` in the runtime prompt payload.
 - Meeting scheduling decisions must rely on `currentLead.exists` rather than profile-detail markers.

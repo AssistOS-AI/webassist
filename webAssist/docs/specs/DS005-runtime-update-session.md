@@ -4,35 +4,40 @@
 Persist the current visitor turn after orchestration completes, so session state is written in one deterministic runtime step.
 
 ## Mechanism
-`webAssist/src/runtime/update-session.mjs` runs after `RecursiveSkilledAgent.executePrompt(...)` returns a valid payload.
+`webAssist/src/runtime/update-session.mjs` exposes two runtime functions used by different stages:
+- `updateSessionProfile(...)`: called by cskill `update-session-profile` from the active `MainAgent` turn.
+- `appendSessionTurn(...)`: called automatically by runtime after each turn using the final visitor response.
 
 ## Module Contract
 - **Name**: `update-session`
-- **Input**:
+- **Input (`updateSessionProfile`)**:
   - `sessionId` (string, required)
-  - `userMessage` (string, required, English)
-  - `agentResponse` (string, required, English)
   - `profiles` (string[])
   - `profileDetails` (string[])
   - `contactInformation` (object)
-- **Output**:
+- **Input (`appendSessionTurn`)**:
+  - `sessionId` (string, required)
+  - `userMessage` (string, required)
+  - `agentResponse` (string, required)
+- **Output (`updateSessionProfile`)**:
   - `success` (boolean)
   - `sessionId` (string)
   - `sessionProfilePath` (string)
+  - `sessionProfile` (object)
+- **Output (`appendSessionTurn`)**:
+  - `success` (boolean)
+  - `sessionId` (string)
   - `sessionHistoryPath` (string)
-  - `session` (object)
+  - `sessionHistory` (object)
 
 ## Execution Logic
-1. Read existing `data/sessions/{sessionId}-history.md` if present.
-2. Merge and de-duplicate `profiles` and `profileDetails`.
-3. Merge existing and incoming `contactInformation` key-value fields (incoming values override same keys).
-4. Write profile state to `data/sessions/{sessionId}-profile.md` including `Contact Information` section.
-5. Append current user/agent history entries to `data/sessions/{sessionId}-history.md`.
+1. `updateSessionProfile(...)` merges/de-duplicates `profiles` and `profileDetails`, merges `contactInformation`, and writes `data/sessions/{sessionId}-profile.md`.
+2. `appendSessionTurn(...)` reads existing `data/sessions/{sessionId}-history.md` and appends current user/agent entries.
 
 ## Continuity Invariant
-- `update-session` persists `profileDetails` exactly as provided by orchestrator payload (after de-duplication).
-- `update-session` persists `contactInformation` as structured key-value session memory.
-- Runtime keeps history persisted on disk but does not depend on history loading for conversational continuity.
+- `updateSessionProfile(...)` persists `profileDetails` exactly as provided by `update-session-profile` payload (after de-duplication).
+- `updateSessionProfile(...)` persists `contactInformation` as structured key-value session memory.
+- Runtime appends history via `appendSessionTurn(...)` after final answer and does not depend on history loading for conversational continuity.
 - Conversational continuity is encoded in `Profile Details` by orchestrator instructions.
 
 ## Datastore Source

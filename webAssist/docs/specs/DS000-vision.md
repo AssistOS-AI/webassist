@@ -8,7 +8,7 @@ The **webAssist** agent is designed to act as a personal assistant available via
 2. **Visitor Profiling**: It identifies the most relevant profile for a user based on their input.
 3. **Information Gathering**: It provides information while simultaneously asking strategic questions to complete the user's profile.
 4. **Lead Conversion**: It automatically creates leads and offers meeting scheduling once a profile threshold is met.
-5. **Adaptive Orchestration**: Turn execution is delegated to Achilles orchestration (oskill + cskills) rather than a hardcoded runtime sequence.
+5. **Adaptive Orchestration**: Turn execution is delegated to Achilles `MainAgent` with a dedicated `systemPrompt` and cskills.
 
 ## User Experience
 The interaction should feel professional and helpful. The agent doesn't just answer; it guides the user toward a specific outcome (e.g., booking a meeting).

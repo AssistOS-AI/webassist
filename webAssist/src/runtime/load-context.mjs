@@ -39,8 +39,8 @@ export async function loadContext({ sessionId }) {
     }
 
     const store = getDataStore();
-    const infoFiles = await listMarkdownFiles(store, DATASTORE_TYPES.INFO);
-    const profileFiles = await listMarkdownFiles(store, DATASTORE_TYPES.PROFILES_INFO);
+    const siteInfo = await listMarkdownFiles(store, DATASTORE_TYPES.INFO);
+    const profilesInfo = await listMarkdownFiles(store, DATASTORE_TYPES.PROFILES_INFO);
     const sessionProfileFileName = getSessionProfileFileName(sessionId);
     const sessionLeadFileName = getSessionLeadFileName(sessionId);
     let sessionRecord = null;
@@ -50,6 +50,7 @@ export async function loadContext({ sessionId }) {
         profileDetails: [],
         contactInformation: {},
     };
+
     const readSectionMap = async (type, fileName) => {
         try {
             return await store.getSectionMap(type, fileName);
@@ -60,6 +61,7 @@ export async function loadContext({ sessionId }) {
             throw error;
         }
     };
+
     const profileRecord = await readSectionMap(DATASTORE_TYPES.SESSIONS, sessionProfileFileName);
     const leadRecord = await readSectionMap(DATASTORE_TYPES.LEADS, sessionLeadFileName);
     const exists = Boolean(profileRecord);
@@ -107,14 +109,16 @@ export async function loadContext({ sessionId }) {
     }
 
     return {
+        siteInfo,
+        profilesInfo,
         currentLead,
         sessionProfile: {
             sessionId,
             isNewSession: !sessionRecord.exists,
             ...sessionRecord.parsed,
         },
-        combinedSiteInfo: combineMarkdownFiles(infoFiles, 'Info') || 'No site info available.',
-        combinedProfilesInfo: combineMarkdownFiles(profileFiles, 'Profile') || 'No profiling info available.',
+        combinedSiteInfo: combineMarkdownFiles(siteInfo, 'Info') || 'No site info available.',
+        combinedProfilesInfo: combineMarkdownFiles(profilesInfo, 'Profile') || 'No profiling info available.',
         sessionProfileText: sessionRecord.exists
             ? sessionRecord.content.trim()
             : 'No previous session profile found. This is a new session.',

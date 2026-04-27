@@ -4,7 +4,7 @@
 To save the captured contact information and profiling details into a structured file inside the `data/leads/` directory when a user is deemed a valuable prospect, and keep that file updated during the same session.
 
 ## Mechanism
-This skill is implemented as a **cskill** and called by `visitor-flow` when lead qualification criteria are met.
+This skill is implemented as a **cskill** and called by the visitor-flow `systemPrompt` policy when lead qualification criteria are met.
 
 ## Tool Definition
 - **Name**: `create-lead`

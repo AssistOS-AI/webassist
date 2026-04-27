@@ -25,7 +25,8 @@ class FakeWebAssistLLM extends LLMAgent {
             throw new Error(`Unexpected complete intent: ${context?.intent}`);
         }
 
-        const sessionId = context?.userPrompt?.match(/"sessionId"\s*:\s*"([^"]+)"/)?.[1] || 'visitor-42';
+        const runtimePrompt = String(context?.userPrompt ?? '');
+        const sessionId = runtimePrompt.match(/"sessionId"\s*:\s*"([^\"]+)"/)?.[1] || 'visitor-42';
 
         if (!prompt.includes('TOOL[create-lead]')) {
             return {
@@ -51,17 +52,25 @@ class FakeWebAssistLLM extends LLMAgent {
             };
         }
 
+        if (!prompt.includes('TOOL[update-session-profile]')) {
+            return {
+                tool: 'update-session-profile',
+                toolPrompt: JSON.stringify({
+                    sessionId,
+                    profiles: ['Developer.md'],
+                    profileDetails: ['Evaluating an API integration', 'Provided email address'],
+                    contactInformation: {
+                        name: 'Alice Example',
+                        email: 'alice@example.com',
+                    },
+                }),
+                reason: 'Persist profiling updates.',
+            };
+        }
+
         return {
             tool: 'final_answer',
-            toolPrompt: JSON.stringify({
-                response: 'Sigur — va putem ajuta cu integrarea API-ului. Mai jos gasiti linkul de programare.',
-                profiles: ['Developer.md'],
-                profileDetails: ['Evaluating an API integration', 'Provided email address'],
-                contactInformation: {
-                    name: 'Alice Example',
-                    email: 'alice@example.com',
-                },
-            }),
+            toolPrompt: 'Sigur — va putem ajuta cu integrarea API-ului. Mai jos gasiti linkul de programare.',
             reason: 'Return final runtime payload.',
         };
     }
@@ -87,9 +96,7 @@ test('webAssist agent loads AchillesAgentLib and executes a full visitor turn', 
 
     assert.equal(agent.achilles.libraryName, 'achillesAgentLib');
     assert.match(result.response, /integrarea API-ului/);
-    assert.deepEqual(result.profiles, ['Developer.md']);
-    assert.equal(result.contactInformation.name, 'Alice Example');
-    assert.equal(result.contactInformation.email, 'alice@example.com');
+    assert.equal(result.sessionId, 'visitor-42');
     assert.ok(llmAgent.calls.length >= 3);
 
     const leadContent = await fs.readFile(
@@ -113,6 +120,6 @@ test('webAssist agent loads AchillesAgentLib and executes a full visitor turn', 
     assert.match(sessionProfileContent, /### 3\. Contact Information/);
     assert.match(sessionProfileContent, /- \*\*name\*\*: Alice Example/);
     assert.match(sessionProfileContent, /- \*\*email\*\*: alice@example\.com/);
-    assert.match(sessionHistoryContent, /Hello, I want to integrate your API/);
-    assert.match(sessionHistoryContent, /Below you can find the scheduling link/);
+    assert.match(sessionHistoryContent, /Buna, vreau sa integrez API-ul vostru/);
+    assert.match(sessionHistoryContent, /Mai jos gasiti linkul de programare/);
 });

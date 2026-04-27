@@ -4,7 +4,7 @@
 To aggregate session and lead metrics over specified time intervals to help the owner gauge site performance.
 
 ## Mechanism
-A **cskill** executed through `RecursiveSkilledAgent` when asked for statistics or reports.
+A **cskill** executed through `MainAgent` when asked for statistics or reports.
 
 ## Tool Definition
 - **Name**: `statistics`

@@ -4,42 +4,48 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 
 import { createWebAssistSandbox } from './helpers.mjs';
-import { updateSession } from '../src/runtime/update-session.mjs';
+import { appendSessionTurn, updateSessionProfile } from '../src/runtime/update-session.mjs';
 import { configureDataStore } from '../src/runtime/dataStore.mjs';
 import { getSessionHistoryFileName, getSessionProfileFileName } from '../src/constants/datastore.mjs';
 
-test('update-session.runtime writes and appends the structured session file', async (t) => {
+test('update-session.runtime updates profile and appends turn history', async (t) => {
     const sandbox = await createWebAssistSandbox();
     t.after(async () => sandbox.cleanup());
     configureDataStore({ agentRoot: sandbox.agentRoot, dataDir: sandbox.dataDir });
 
-    const firstResult = await updateSession({
+    const firstResult = await updateSessionProfile({
         sessionId: 'test-session-1',
-        userMessage: 'Hello',
-        agentResponse: 'Hi there!',
         profiles: ['Developer.md'],
         profileDetails: ['Understands the API basics'],
         contactInformation: {
             name: 'Alex Builder',
         },
     });
+    await appendSessionTurn({
+        sessionId: 'test-session-1',
+        userMessage: 'Hello',
+        agentResponse: 'Hi there!',
+    });
 
     assert.equal(firstResult.success, true);
 
-    const secondResult = await updateSession({
+    const secondResult = await updateSessionProfile({
         sessionId: 'test-session-1',
-        userMessage: 'Need API help\nASAP',
-        agentResponse: 'Happy to help.\nCan you share your timeline?',
         profiles: ['Developer.md', 'Developer.md', 'EnterpriseClient.md'],
         profileDetails: ['Understands the API basics', 'Urgent integration timeline'],
         contactInformation: {
             email: 'alex@example.com',
         },
     });
+    await appendSessionTurn({
+        sessionId: 'test-session-1',
+        userMessage: 'Need API help\nASAP',
+        agentResponse: 'Happy to help.\nCan you share your timeline?',
+    });
 
     assert.equal(secondResult.success, true);
-    assert.equal(secondResult.session.contactInformation.name, 'Alex Builder');
-    assert.equal(secondResult.session.contactInformation.email, 'alex@example.com');
+    assert.equal(secondResult.sessionProfile.contactInformation.name, 'Alex Builder');
+    assert.equal(secondResult.sessionProfile.contactInformation.email, 'alex@example.com');
 
     const profileContent = await fs.readFile(
         path.join(sandbox.dataDir, 'sessions', `${getSessionProfileFileName('test-session-1')}.md`),

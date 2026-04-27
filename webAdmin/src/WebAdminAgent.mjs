@@ -1,12 +1,13 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { RecursiveSkilledAgent } from "achillesAgentLib";
+import { MainAgent } from 'achillesAgentLib';
 import {
     configureDataStore,
     getConfiguredDataDir,
     getDataStore,
 } from './runtime/dataStore.mjs';
+import { ADMIN_FLOW_SYSTEM_PROMPT } from './prompts/admin-flow-system-prompt.mjs';
 import { loadContext } from './runtime/load-context.mjs';
 import { DATASTORE_TYPES } from './constants/datastore.mjs';
 
@@ -14,40 +15,38 @@ function getDefaultAgentRoot() {
     return path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 }
 
-function buildBaseAgentOptions({ agentRoot, llmAgent, logger, sessionConfig, recursiveAgentOptions }) {
+function buildBaseAgentOptions({ agentRoot, logger, mainAgentOptions }) {
     const explicitSkillRoot = path.join(agentRoot, 'skills');
-    const requestedSkillRoots = Array.isArray(recursiveAgentOptions?.additionalSkillRoots)
-        ? recursiveAgentOptions.additionalSkillRoots
+    const requestedSkillRoots = Array.isArray(mainAgentOptions?.additionalSkillRoots)
+        ? mainAgentOptions.additionalSkillRoots
         : [];
     const additionalSkillRoots = [explicitSkillRoot, ...requestedSkillRoots]
         .filter((value, index, all) => value && all.indexOf(value) === index);
 
     const baseOptions = {
-        llmAgent,
         logger,
         startDir: agentRoot,
-        searchUpwards: false,
-        sessionConfig,
         additionalSkillRoots,
-        ...(recursiveAgentOptions ?? {}),
+        ...(mainAgentOptions ?? {}),
     };
 
     return baseOptions;
 }
 
-function buildOrchestrationPrompt({ message, availableLeadIds, preloadedContext }) {
+function buildRuntimePrompt({ message, availableLeadIds, loadedContext, referenceDate }) {
     return [
-        'WebAdmin owner request.',
-        'Owner message:',
+        'User message:',
         String(message),
+        'Reference date:',
+        referenceDate instanceof Date ? referenceDate.toISOString() : String(referenceDate),
         'Known lead IDs:',
         availableLeadIds.length > 0 ? availableLeadIds.join('\n') : 'No leads available yet.',
         'Known profile templates:',
-        String(preloadedContext?.combinedProfiles ?? 'No profiles available.'),
+        String(loadedContext?.combinedProfiles ?? 'No profiles available.'),
         'Owner info snapshot:',
-        String(preloadedContext?.combinedOwnerInfo ?? 'No owner info available.'),
+        String(loadedContext?.combinedOwnerInfo ?? 'No owner info available.'),
         'Website info snapshot:',
-        String(preloadedContext?.combinedSiteInfo ?? 'No site info available.'),
+        String(loadedContext?.combinedSiteInfo ?? 'No site info available.'),
     ].join('\n');
 }
 
@@ -72,9 +71,8 @@ export async function createWebAdminAgent({
     agentRoot = getDefaultAgentRoot(),
     dataDir = null,
     llmAgent = null,
-    logger = console,
-    sessionConfig = {},
-    recursiveAgentOptions = {},
+    logger = null,
+    mainAgentOptions = {},
 } = {}) {
     const resolvedAgentRoot = path.resolve(agentRoot);
     configureDataStore({
@@ -83,13 +81,15 @@ export async function createWebAdminAgent({
     });
     const resolvedDataDir = getConfiguredDataDir();
 
-    const recursiveAgent = new RecursiveSkilledAgent(buildBaseAgentOptions({
+    const mainAgent = new MainAgent(buildBaseAgentOptions({
         agentRoot: resolvedAgentRoot,
-        llmAgent,
         logger,
-        sessionConfig,
-        recursiveAgentOptions,
+        mainAgentOptions,
     }));
+    if (llmAgent) {
+        mainAgent.llmAgent = llmAgent;
+        mainAgent.subsystemFactory.setLLMAgent(llmAgent);
+    }
 
     return {
         achilles: {
@@ -98,32 +98,24 @@ export async function createWebAdminAgent({
         },
         agentRoot: resolvedAgentRoot,
         dataDir: resolvedDataDir,
-        recursiveAgent,
+        mainAgent,
         async handleMessage({ sessionId = null, message, mode = 'fast', referenceDate = new Date() }) {
             if (!message) {
                 throw new Error('webAdmin.handleMessage requires a message.');
             }
 
             const availableLeadIds = await listLeadIds();
-            const preloadedContext = await loadContext();
-            const execution = await recursiveAgent.executePrompt(buildOrchestrationPrompt({
+            const loadedContext = await loadContext();
+            const runtimePrompt = buildRuntimePrompt({
                 message,
                 availableLeadIds,
-                preloadedContext,
-            }), {
+                loadedContext,
+                referenceDate,
+            });
+            const execution = await mainAgent.executePrompt(runtimePrompt, {
+                ...(sessionId ? { sessionId } : {}),
                 model: mode,
-                context: {
-                    ...(sessionId ? { sessionId } : {}),
-                    dataDir: resolvedDataDir,
-                    referenceDate,
-                    webadmin: {
-                        ...(sessionId ? { sessionId } : {}),
-                        dataDir: resolvedDataDir,
-                        availableLeadIds,
-                        preloadedContext,
-                        referenceDate,
-                    },
-                },
+                systemPrompt: ADMIN_FLOW_SYSTEM_PROMPT,
             });
 
             return normalizeRuntimeResult(execution);

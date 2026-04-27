@@ -1,10 +1,10 @@
 # DS004 - Runtime Module: load-context
 
 ## Goal
-Load all visitor-turn context before orchestration starts, so the agentic loop receives deterministic local state without needing a dedicated context-loading cskill.
+Load dynamic visitor-turn context before execution starts.
 
 ## Mechanism
-`webAssist/src/runtime/load-context.mjs` runs before `RecursiveSkilledAgent.executePrompt(...)`.
+`webAssist/src/runtime/load-context.mjs` runs before `MainAgent.executePrompt(...)`.
 
 ## Module Contract
 - **Name**: `load-context`
@@ -34,7 +34,7 @@ Load all visitor-turn context before orchestration starts, so the agentic loop r
 2. Read markdown files from `data/profilesInfo/`.
 3. Read and parse `data/sessions/{sessionId}-profile.md` if it exists.
 4. Resolve deterministic lead file `data/leads/{sessionId}-lead.md` and parse it when present.
-5. Return both structured and combined-text context used by the orchestrator prompt.
+5. Return dynamic context values used by the runtime prompt.
 
 ## Session Memory Rule
 - `load-context` must not load session history dialogue from `{sessionId}-history.md`.

@@ -4,7 +4,7 @@
 To manage the state and lifecycle of a lead inside the `webAdmin` application.
 
 ## Mechanism
-A **cskill** executed through `RecursiveSkilledAgent` when the owner requests status updates for a lead.
+A **cskill** executed through `MainAgent` when the owner requests status updates for a lead.
 
 ## Tool Definition
 - **Name**: `update-lead`

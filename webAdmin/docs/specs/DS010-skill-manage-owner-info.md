@@ -4,7 +4,7 @@
 Create or update `data/config/owner.md` with owner contact information.
 
 ## Mechanism
-A **cskill** executed through `RecursiveSkilledAgent` when the owner updates contact details.
+A **cskill** executed through `MainAgent` when the owner updates contact details.
 
 ## Tool Definition
 - **Name**: `manage-owner-info`

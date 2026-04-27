@@ -4,7 +4,7 @@
 Create, update, or display site information markdown files in `data/info/`.
 
 ## Mechanism
-A **cskill** executed through `RecursiveSkilledAgent` when the owner manages website info.
+A **cskill** executed through `MainAgent` when the owner manages website info.
 
 ## Tool Definition
 - **Name**: `manage-site-info`

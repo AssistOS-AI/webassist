@@ -12,7 +12,7 @@ The **webAdmin** agent is implemented as a Node.js CLI tool for site owners. It 
 - **Purpose**: Declares runtime integration metadata so `webAdmin` can be executed as a Ploinky agent.
 - **Enablement Mode**: `webAdmin` must be enabled as a normal workspace agent (non-global). Do not run it through global Explorer-style enablement.
   - Recommended: `ploinky enable agent webAdmin` (or `ploinky enable agent webassist/webAdmin`) and then start workspace normally.
-  - If enabled globally, `RecursiveSkilledAgent` may not register the intended orchestrator skill (`admin-flow`) for this agent context.
+  - If enabled globally, runtime discovery may register an unintended skill set.
 - **Environment Contract** (`profiles.default.env`):
   - `SOUL_GATEWAY_API_KEY`: API key used for LLM calls through AchillesAgentLib.
   - `ACHILLES_DEBUG`: Enables AchillesAgentLib debug logging.
@@ -39,31 +39,29 @@ The **webAdmin** agent is implemented as a Node.js CLI tool for site owners. It 
 - **Mandatory Usage**: Access to LLMs must be through this library.
 - **Import Mechanism**: The runtime imports AchillesAgentLib directly from resolved `node_modules`.
 - **Loading Logic**:
-  - Use direct import syntax: `import { RecursiveSkilledAgent, MarkdownDataStore } from "achillesAgentLib";`.
+  - Use direct import syntax: `import { MainAgent, MarkdownDataStore } from "achillesAgentLib";`.
   - Do not use filesystem scanning loaders for webAdmin Achilles resolution.
 
-## Base Agent: RecursiveSkilledAgent
-- **Functionality**: The runtime uses a single `RecursiveSkilledAgent` instance (composition) to manage discovery and execution.
+## Base Agent: MainAgent
+- **Functionality**: The runtime uses a single `MainAgent` instance (composition) to manage discovery and execution.
 
 ## Skills Discovery and Orchestration
 - webAdmin skills under `webAdmin/skills/` are implemented as Achilles **cskills**.
-- webAdmin includes one Achilles **oskill** (`admin-flow`) that orchestrates each turn.
-- At startup, `RecursiveSkilledAgent` is initialized with `startDir = webAdmin/` and discovers skills from `webAdmin/skills/`.
-- Skill discovery for webAdmin runtime must use `searchUpwards: false`.
-- During runtime, webAdmin calls `RecursiveSkilledAgent.executePrompt(...)` without explicit skill name.
-- `RecursiveSkilledAgent` selects `admin-flow`, and that orchestrator invokes cskills as needed.
-- `admin-flow` returns a **plain text** owner-facing response string (no JSON).
-- The sessionId is forwarded to `RecursiveSkilledAgent` to isolate multi-user sessions in shared instances.
+- At startup, `MainAgent` is initialized with `startDir = webAdmin/` and discovers skills from `webAdmin/skills/`.
+- During runtime, webAdmin calls `MainAgent.executePrompt(...)`.
+- `systemPrompt` is loaded from `webAdmin/src/prompts/admin-flow-system-prompt.mjs`.
+- Dynamic context (known leads, profile list, owner/site snapshots, owner message) is appended into the runtime prompt on every turn.
+- The sessionId is forwarded to `MainAgent` to isolate multi-user sessions in shared instances.
 - Runtime data access is centralized through `webAdmin/src/runtime/dataStore.mjs`.
 - The datastore is configured exactly once when `createWebAdminAgent(...)` is initialized (default `<repo>/data`, or CLI `--data-dir` override).
 - Runtime modules and skills only consume the configured datastore instance and must not accept per-call datastore overrides.
-- Before each orchestration call, webAdmin preloads profiles list, owner info, and website info into runtime context.
+- Before each orchestration call, webAdmin runs `webAdmin/src/runtime/load-context.mjs` to load profile list, owner info, and website info for the runtime prompt.
 - Datastore folder names and section labels are centralized in `webAdmin/src/constants/datastore.mjs` and must be reused across runtime/skills (no hardcoded folder/section literals in business logic).
 - Markdown parsing/rendering and section normalization rules (including `*None*` fallback for empty section content) are handled by Achilles `MarkdownDataStore`, not by agent datastore modules.
 
 ## CLI Delegation Flow
 - The Node.js launcher `webAdmin/src/index.mjs` initializes `WebAdminAgent` and executes conversation turns.
-- `WebAdminAgent` initializes one `RecursiveSkilledAgent` instance and delegates each turn through `executePrompt(...)`.
+- `WebAdminAgent` initializes one `MainAgent` instance and delegates each turn through `executePrompt(...)`.
 - In interactive mode, the launcher calls the runtime repeatedly (one call per turn).
 - The runtime expects the orchestrator to return a non-empty response string for each turn.
 

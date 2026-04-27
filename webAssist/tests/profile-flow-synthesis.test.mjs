@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { LLMAgent } from 'achillesAgentLib';
 
 import { createWebAssistAgent } from '../src/index.mjs';
@@ -14,51 +15,71 @@ class FakeFlowSynthesisLLM extends LLMAgent {
             name: 'FakeFlowSynthesisLLM',
             invokerStrategy: async () => '',
         });
+        this.firstTurnPersisted = false;
+        this.secondTurnPersisted = false;
     }
 
-    async complete({ context }) {
+    async complete({ prompt, context }) {
         if (context?.intent !== 'agentic-session-planner') {
             throw new Error(`Unexpected complete intent: ${context?.intent}`);
         }
 
         const userPrompt = String(context?.userPrompt ?? '');
-        const sessionId = userPrompt.match(/Session ID:\s*([^\n]+)/)?.[1]?.trim() || 'session-flow';
+        const sessionId = userPrompt.match(/"sessionId"\s*:\s*"([^\"]+)"/)?.[1] || 'session-flow';
         const isSecondTurn = userPrompt.includes('I can share some papers later');
 
         if (isSecondTurn) {
+            if (!this.secondTurnPersisted) {
+                this.secondTurnPersisted = true;
+                return {
+                    tool: 'update-session-profile',
+                    toolPrompt: JSON.stringify({
+                        sessionId,
+                        profiles: ['Researcher.md'],
+                        profileDetails: [
+                            'Interested in research collaboration',
+                            'Open to academic-industry partnerships',
+                            'The user did not answer the question about available datasets and student resources.',
+                            'The user is asked about project timeline and expected outcomes. His/her next reply should answer the question.',
+                        ],
+                        contactInformation: {
+                            name: 'Research Visitor',
+                            email: 'research.visitor@example.com',
+                        },
+                    }),
+                    reason: 'Persist second-turn profile data.',
+                };
+            }
+
             return {
                 tool: 'final_answer',
+                toolPrompt: 'Thanks. I still need one detail: what project timeline and expected outcomes do you have?',
+                reason: 'Return second turn payload.',
+            };
+        }
+
+        if (!this.firstTurnPersisted) {
+            this.firstTurnPersisted = true;
+            return {
+                tool: 'update-session-profile',
                 toolPrompt: JSON.stringify({
-                    response: 'Thanks. I still need one detail: what project timeline and expected outcomes do you have?',
+                    sessionId,
                     profiles: ['Researcher.md'],
                     profileDetails: [
                         'Interested in research collaboration',
-                        'Open to academic-industry partnerships',
-                        'The user did not answer the question about available datasets and student resources.',
-                        'The user is asked about project timeline and expected outcomes. His/her next reply should answer the question.',
+                        'The user is asked about available datasets and student resources. His/her next reply should answer the question.',
                     ],
                     contactInformation: {
                         name: 'Research Visitor',
-                        email: 'research.visitor@example.com',
                     },
                 }),
-                reason: 'Return second turn payload.',
+                reason: 'Persist first-turn profile data.',
             };
         }
 
         return {
             tool: 'final_answer',
-            toolPrompt: JSON.stringify({
-                response: 'Great. What available datasets and student resources can you provide for collaboration?',
-                profiles: ['Researcher.md'],
-                profileDetails: [
-                    'Interested in research collaboration',
-                    'The user is asked about available datasets and student resources. His/her next reply should answer the question.',
-                ],
-                contactInformation: {
-                    name: 'Research Visitor',
-                },
-            }),
+            toolPrompt: 'Great. What available datasets and student resources can you provide for collaboration?',
             reason: 'Return first turn payload.',
         };
     }
@@ -67,6 +88,8 @@ class FakeFlowSynthesisLLM extends LLMAgent {
 test('webAssist persists orchestrator-authored conversation memory inside profile details and keeps history on disk', async (t) => {
     const sandbox = await createWebAssistSandbox();
     t.after(async () => sandbox.cleanup());
+    const sandboxDataStoreModule = await import(pathToFileURL(path.join(sandbox.agentRoot, 'src', 'runtime', 'dataStore.mjs')).href);
+    sandboxDataStoreModule.configureDataStore({ agentRoot: sandbox.agentRoot, dataDir: sandbox.dataDir });
 
     const agent = await createWebAssistAgent({
         agentRoot: sandbox.agentRoot,
@@ -79,18 +102,14 @@ test('webAssist persists orchestrator-authored conversation memory inside profil
         message: 'Can we collaborate on AI research?',
     });
 
-    assert.deepEqual(firstTurn.profiles, ['Researcher.md']);
-    assert.equal(firstTurn.contactInformation.name, 'Research Visitor');
-    assert.ok(firstTurn.profileDetails.includes('The user is asked about available datasets and student resources. His/her next reply should answer the question.'));
+    assert.equal(firstTurn.response, 'Great. What available datasets and student resources can you provide for collaboration?');
 
     const secondTurn = await agent.handleMessage({
         sessionId: 'session-flow-1',
         message: 'I can share some papers later.',
     });
 
-    assert.ok(secondTurn.profileDetails.includes('The user did not answer the question about available datasets and student resources.'));
-    assert.ok(secondTurn.profileDetails.includes('The user is asked about project timeline and expected outcomes. His/her next reply should answer the question.'));
-    assert.equal(secondTurn.contactInformation.email, 'research.visitor@example.com');
+    assert.equal(secondTurn.response, 'Thanks. I still need one detail: what project timeline and expected outcomes do you have?');
 
     const profilePath = path.join(sandbox.dataDir, 'sessions', `${getSessionProfileFileName('session-flow-1')}.md`);
     const historyPath = path.join(sandbox.dataDir, 'sessions', `${getSessionHistoryFileName('session-flow-1')}.md`);
