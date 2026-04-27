@@ -32,20 +32,28 @@ function parseInput(promptText) {
     return parsed;
 }
 
+function renderKeyValueMap(map) {
+    const entries = Object.entries(map || {}).filter(([, value]) => String(value ?? '').trim() !== '');
+    if (entries.length === 0) {
+        return ['- *None*'];
+    }
+    return entries.map(([key, value]) => `- ${key}: ${value}`);
+}
+
 export async function action({ promptText }) {
     let payload;
     try {
         payload = parseInput(promptText);
     } catch (error) {
         const message = error?.message || 'Invalid input.';
-        return { error: message, message };
+        return message;
     }
 
     const { leadId } = payload;
 
     if (typeof leadId !== 'string' || !leadId.trim()) {
         const message = 'leadId is required.';
-        return { error: message, message };
+        return message;
     }
 
     const store = getDataStore();
@@ -59,7 +67,7 @@ export async function action({ promptText }) {
 
         if (!sessionId) {
             const message = `Could not determine the session for ${normalizedLeadId}.`;
-            return { error: message, message };
+            return message;
         }
 
         let sessionRecord;
@@ -95,38 +103,57 @@ export async function action({ promptText }) {
         };
 
         const historyRaw = sessionHistoryRecord?.sections?.[SESSION_SECTIONS.HISTORY] ?? '*None*';
+        const parsedHistory = store.parseDialogue(historyRaw).map((entry) => ({
+            role: entry.speaker.toLowerCase(),
+            message: entry.message,
+        }));
         const sessionMarkdown = [
             sessionRecord ? `--- [Session Profile: ${getSessionProfileFileName(sessionId)}.md] ---\n${sessionRecord.rawMarkdown}` : '',
             sessionHistoryRecord ? `--- [Session History: ${getSessionHistoryFileName(sessionId)}.md] ---\n${sessionHistoryRecord.rawMarkdown}` : '',
         ].filter(Boolean).join('\n\n');
         const hasSessionData = Boolean(sessionRecord || sessionHistoryRecord);
-        return {
-            message: `Lead details loaded for ${normalizedLeadId}.`,
-            info: {
-                leadId: normalizedLeadId,
-                sessionId,
-                leadData,
-                leadMarkdown: leadRecord.rawMarkdown,
-                sessionHistory: hasSessionData
-                    ? {
-                        profiles: store.parseList(sessionRecord?.sections?.[SESSION_SECTIONS.PROFILE]),
-                        profileDetails: store.parseList(sessionRecord?.sections?.[SESSION_SECTIONS.PROFILE_DETAILS]),
-                        history: store.parseDialogue(historyRaw).map((entry) => ({
-                            role: entry.speaker.toLowerCase(),
-                            message: entry.message,
-                        })),
-                        rawContent: sessionMarkdown,
-                    }
-                    : { profiles: [], profileDetails: [], history: [], rawContent: '' },
-                sessionMarkdown: sessionMarkdown || null,
-                sessionFound: hasSessionData,
-            },
-        };
+        const profiles = store.parseList(sessionRecord?.sections?.[SESSION_SECTIONS.PROFILE]);
+        const profileDetails = store.parseList(sessionRecord?.sections?.[SESSION_SECTIONS.PROFILE_DETAILS]);
+
+        const lines = [
+            `Lead details loaded for ${normalizedLeadId}.`,
+            `Lead ID: ${normalizedLeadId}.md`,
+            `Session ID: ${sessionId}`,
+            `Status: ${leadData.status || 'unknown'}`,
+            `Profile: ${leadData.profile || 'unknown'}`,
+            `Created At: ${leadData.createdAt || 'unknown'}`,
+            `Updated At: ${leadData.updatedAt || 'unknown'}`,
+            '',
+            'Contact Information:',
+            ...renderKeyValueMap(leadData.contactInfo),
+            '',
+            'Summary:',
+            leadData.summary || '*None*',
+            '',
+            `Session data found: ${hasSessionData ? 'yes' : 'no'}`,
+        ];
+
+        if (hasSessionData) {
+            lines.push('Session profiles:');
+            lines.push(...(profiles.length > 0 ? profiles.map((item) => `- ${item}`) : ['- *None*']));
+            lines.push('Session profile details:');
+            lines.push(...(profileDetails.length > 0 ? profileDetails.map((item) => `- ${item}`) : ['- *None*']));
+            lines.push('Session history:');
+            lines.push(...(parsedHistory.length > 0
+                ? parsedHistory.map((entry) => `- ${entry.role}: ${entry.message}`)
+                : ['- *None*']));
+            lines.push('Session markdown:');
+            lines.push(sessionMarkdown || '*None*');
+        }
+
+        lines.push('Lead markdown:');
+        lines.push(leadRecord.rawMarkdown);
+        return lines.join('\n');
 
     } catch (error) {
         if (error && error.code === 'ENOENT') {
             const message = `Lead not found: ${normalizedLeadId}`;
-            return { error: message, message };
+            return message;
         }
         throw error;
     }

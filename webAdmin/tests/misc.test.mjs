@@ -21,10 +21,11 @@ test('lead-info skill returns parsed lead data and related session history', asy
     const result = await leadInfoAction({
         promptText: JSON.stringify({ leadId: 'dev-session-lead.md' }),
     });
-    assert.equal(result.info.leadData.profile, 'Developer');
-    assert.equal(result.info.sessionId, 'dev-session');
-    assert.equal(result.info.sessionFound, true);
-    assert.match(result.info.sessionMarkdown, /Needs API integration support/);
+    assert.equal(typeof result, 'string');
+    assert.match(result, /Lead details loaded for dev-session-lead\./);
+    assert.match(result, /Profile: Developer/);
+    assert.match(result, /Session ID: dev-session/);
+    assert.match(result, /Needs API integration support/);
 });
 
 test('news skill returns the newest lead summaries first', async (t) => {
@@ -51,13 +52,14 @@ Newest lead for admin news coverage.
     const result = await newsAction({
         promptText: JSON.stringify({ limit: 2 }),
     });
-    assert.equal(result.leads.length, 2);
-    assert.equal(result.leads[0].leadId, 'newest-session-lead.md');
-    assert.equal(result.leads[0].status, 'new');
-    assert.match(result.leads[0].summary, /Newest lead/);
+    assert.equal(typeof result, 'string');
+    assert.match(result, /Retrieved 2 recent leads\./);
+    assert.match(result, /- newest-session-lead\.md/);
+    assert.match(result, /status: new/);
+    assert.match(result, /summary: Newest lead/);
 });
 
-test('skills return explicit error objects for invalid input payloads', async (t) => {
+test('skills return explicit error text for invalid input payloads', async (t) => {
     const sandbox = await createWebAdminSandbox();
     t.after(async () => sandbox.cleanup());
     configureDataStore({ agentRoot: sandbox.agentRoot, dataDir: sandbox.dataDir });
@@ -75,8 +77,7 @@ test('skills return explicit error objects for invalid input payloads', async (t
 
     for (const execute of skillActions) {
         const result = await execute({ promptText: invalidPrompt });
-        assert.equal(typeof result.error, 'string');
-        assert.equal(result.error.length > 0, true);
-        assert.equal(result.message, result.error);
+        assert.equal(typeof result, 'string');
+        assert.equal(result.length > 0, true);
     }
 });

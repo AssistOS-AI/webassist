@@ -103,14 +103,23 @@ export async function action({ promptText }) {
         [LEAD_SECTIONS.SUMMARY]: String(leadRecord.summary ?? '').trim(),
     });
 
-    return {
-        success: true,
-        created: !existingLead,
-        leadId,
-        leadPath: `${normalizedLeadId}.md`,
-        lead: {
-            ...leadRecord,
-            rawContent: saved.rawMarkdown,
-        },
-    };
+    const contactLines = Object.entries(leadRecord.contactInfo)
+        .map(([key, value]) => `- ${key}: ${value}`)
+        .join('\n');
+
+    return [
+        `${existingLead ? 'Updated' : 'Created'} lead ${leadId}.`,
+        `Lead path: ${normalizedLeadId}.md`,
+        `Status: ${leadRecord.status}`,
+        `Profile: ${leadRecord.profile}`,
+        `Session ID: ${leadRecord.sessionId}`,
+        `Created At: ${leadRecord.createdAt}`,
+        `Updated At: ${leadRecord.updatedAt}`,
+        'Contact Info:',
+        contactLines,
+        'Summary:',
+        leadRecord.summary,
+        'Lead Markdown:',
+        saved.rawMarkdown,
+    ].join('\n');
 }

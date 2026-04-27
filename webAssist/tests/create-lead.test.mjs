@@ -21,9 +21,9 @@ test('create-lead writes a deterministic lead file and updates it in place', asy
         }),
     });
 
-    assert.equal(firstResult.success, true);
-    assert.equal(firstResult.created, true);
-    assert.equal(firstResult.leadId, 'session-xyz-lead.md');
+    assert.equal(typeof firstResult, 'string');
+    assert.match(firstResult, /Created lead session-xyz-lead\.md\./);
+    assert.match(firstResult, /Profile: Developer/);
 
     const secondResult = await action({
         promptText: JSON.stringify({
@@ -34,8 +34,8 @@ test('create-lead writes a deterministic lead file and updates it in place', asy
         }),
     });
 
-    assert.equal(secondResult.success, true);
-    assert.equal(secondResult.created, false);
+    assert.equal(typeof secondResult, 'string');
+    assert.match(secondResult, /Updated lead session-xyz-lead\.md\./);
 
     const leadsDir = path.join(sandbox.dataDir, 'leads');
     const files = await fs.readdir(leadsDir);

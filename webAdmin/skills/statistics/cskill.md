@@ -8,10 +8,9 @@ Computes session and lead metrics for a requested interval. Typical triggers inc
   - `interval` (string, required; `day` | `week` | `month` | `year`)
 
 ## Output Format
-- `object` with:
-  - `message` (string)
-  - `stats` (object)
-  - `error` (string) on input validation failures
+- Plain-text string only.
+- Success returns a readable metrics report (`Interval`, window bounds, totals, and `Leads By Profile`).
+- Validation and runtime errors return plain-text error messages.
 
 ## Constraints
 - Uses filesystem timestamps and parsed lead metadata.

@@ -8,10 +8,9 @@ Returns newest leads first with compact summary data. Typical triggers include `
   - `limit` (number, optional; defaults to 5)
 
 ## Output Format
-- `object` with:
-  - `message` (string)
-  - `leads` (array)
-  - `error` (string) on input validation failures
+- Plain-text string only.
+- Success returns a readable list of recent leads (bullet format with status/profile/timestamp/summary).
+- Validation and runtime errors return plain-text error messages.
 
 ## Constraints
 - Sorts by newest lead timestamp descending.

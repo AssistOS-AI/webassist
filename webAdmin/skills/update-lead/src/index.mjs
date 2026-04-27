@@ -41,18 +41,18 @@ export async function action({ promptText }) {
         payload = parseInput(promptText);
     } catch (error) {
         const message = error?.message || 'Invalid input.';
-        return { error: message, message };
+        return message;
     }
 
     const { leadId, newStatus } = payload;
 
     if (typeof leadId !== 'string' || !leadId.trim()) {
         const message = 'leadId is required.';
-        return { error: message, message };
+        return message;
     }
     if (!ALLOWED_STATUSES.has(newStatus)) {
         const message = `Invalid status: ${newStatus}`;
-        return { error: message, message };
+        return message;
     }
 
     const store = getDataStore();
@@ -64,7 +64,7 @@ export async function action({ promptText }) {
     } catch (error) {
         if (error && error.code === 'ENOENT') {
             const message = `Lead not found: ${normalizedLeadId}`;
-            return { error: message, message };
+            return message;
         }
         throw error;
     }
@@ -91,12 +91,15 @@ export async function action({ promptText }) {
         [LEAD_SECTIONS.SUMMARY]: updatedLead.summary,
     });
 
-    return {
-        message: `Lead ${normalizedLeadId} updated to status ${updatedLead.status}.`,
-        leadId: normalizedLeadId,
-        lead: {
-            ...updatedLead,
-            rawContent: content.rawMarkdown,
-        },
-    };
+    return [
+        `Lead ${normalizedLeadId} updated to status ${updatedLead.status}.`,
+        `Lead ID: ${normalizedLeadId}.md`,
+        `Profile: ${updatedLead.profile || 'unknown'}`,
+        `Session ID: ${updatedLead.sessionId || 'unknown'}`,
+        `Created At: ${updatedLead.createdAt || 'unknown'}`,
+        `Updated At: ${updatedLead.updatedAt || 'unknown'}`,
+        '',
+        'Lead Markdown:',
+        content.rawMarkdown,
+    ].join('\n');
 }

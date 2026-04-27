@@ -16,14 +16,11 @@ A **cskill** executed through `MainAgent` when the owner requests a new profile.
   - `qualifyingCriteria` (array of strings)
 
 ## Output
-A JSON object containing:
-- `message` (string)
-- `created` (boolean)
-- `updated` (boolean)
-- `profileName` (string)
-- `profilePath` (string)
-- `profile` (object) with the provided lists
-- `error` (string) on invalid input or missing profile
+Plain-text string only:
+- list mode: profile bullet list (or `No profiles found.`)
+- display mode: readable section list + rendered profile sections
+- create/update mode: readable status summary and section bullets
+- validation/lookup failures: deterministic error text
 
 ## Execution Logic (Node.js)
 1. Validate `profileName` and reject path separators or empty names.

@@ -13,15 +13,9 @@ A **cskill** executed through `MainAgent` when queried about recent lead activit
   - `limit` (number, optional): The maximum number of recent leads to return. Default is 5.
 
 ## Output
-A JSON object containing:
-- `message` (string)
-- `leads` list/array of JSON objects with brief summaries of the recent leads:
-- `leadId` (string)
-- `status` (string, e.g., `new`)
-- `profile` (string)
-- `summary` (string)
-- `createdAt` (timestamp or formatted date string)
-- `error` (string) on input validation failures
+Plain-text string only:
+- success: readable recent-leads list with one block per lead (`leadId`, `status`, `profile`, `summary`, `createdAt`).
+- failure: deterministic error text on input validation failures.
 
 ## Execution Logic (Node.js)
 1. Read the `data/leads/` directory.
@@ -29,4 +23,4 @@ A JSON object containing:
 3. Sort the files descending by time.
 4. Take the top `limit` files.
 5. Parse their contents to extract the status, profile, and summary.
-6. Return the formatted list.
+6. Return the formatted list as readable plain text.

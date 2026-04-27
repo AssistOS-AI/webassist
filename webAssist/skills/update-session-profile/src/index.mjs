@@ -31,8 +31,10 @@ export async function action({ promptText }) {
         contactInformation: contactInformation || {},
     });
 
-    return {
-        sessionId,
-        updated: true,
-    };
+    return [
+        `Updated session profile for ${sessionId}.`,
+        `Profiles: ${Array.isArray(profiles) ? profiles.length : 0}`,
+        `Profile Details: ${Array.isArray(profileDetails) ? profileDetails.length : 0}`,
+        `Contact Fields: ${contactInformation && typeof contactInformation === 'object' ? Object.keys(contactInformation).length : 0}`,
+    ].join('\n');
 }

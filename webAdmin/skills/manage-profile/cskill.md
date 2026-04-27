@@ -18,13 +18,11 @@ Mode mapping:
 - `{ "profileName": "...", "characteristics": [...], "interests": [...], "qualifyingCriteria": [...] }` => create/update
 
 ## Output Format
-- `object` with:
-  - `message` (string)
-  - `profiles` (array of strings) for list mode
-  - `profileName` (string) for display/create/update modes
-  - `content` (string) and `sectionsDisplayed` (array) for display mode
-  - `created` (boolean), `updated` (boolean), `profilePath` (string), `profile` (object) for create/update mode
-  - `error` (string) on failure
+- Plain-text string only.
+- List mode (`{}`) returns a profile bullet list (or `No profiles found.`).
+- Display mode returns a readable section list and rendered profile sections.
+- Create/update mode returns readable status text with section bullets.
+- Validation and lookup failures return plain-text error messages.
 
 ## Constraints
 - Rejects invalid or unsafe profile names.

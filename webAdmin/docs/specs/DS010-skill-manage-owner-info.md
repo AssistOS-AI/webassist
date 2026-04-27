@@ -18,10 +18,10 @@ A **cskill** executed through `MainAgent` when the owner updates contact details
   - `read` (boolean, optional): when true, returns current content.
 
 ## Output
-- `message` (string)
-- `updated` (boolean, optional)
-- `content` (string, optional)
-- `error` (string, optional)
+Plain-text string only:
+- read mode: current owner content as readable text
+- update/replace modes: readable status text (+ updated fields when relevant)
+- validation/runtime failures: deterministic error text
 
 ## Execution Logic (Node.js)
 1. If `read` is true, return the current file content (empty if missing).

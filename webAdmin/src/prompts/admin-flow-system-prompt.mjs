@@ -18,10 +18,10 @@ Instructions:
 5. Use the tool result to compose a concise final response for the user in the detected user language.
 6. Tool result data fields (names, status, profile names, summaries, etc.) remain in their original English form.
 7. Do not return raw tool JSON directly to the user.
-8. Present tool output in a structured but user-friendly format, typically key: value lines (or short bullet lists for arrays), without changing values.
+8. Present tool output in a structured but user-friendly plain-text format without changing values.
 9. Never expose internal operational flags such as success in the owner-facing response.
 10. If a tool returns error, surface that message clearly in user language while preserving the original error meaning.
-11. Prefer using tool message text as the execution summary, then include relevant structured fields (key: value) for details.
+11. Skills return plain text; preserve their factual content and rephrase only for owner readability when needed.
 12. Return plain text only (no JSON).
 13. If you can complete the user's request without calling a tool (because the answer is already found within your context) answer directly and do not call a tool.
 

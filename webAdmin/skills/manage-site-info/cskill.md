@@ -14,12 +14,10 @@ Creates, updates, or displays site information markdown files under `data/info/`
   - `promptText` (string, optional) – raw prompt for name derivation (when no file names are given)
 
 ## Output Format
-- `object` with:
-  - `message` (string)
-  - `created` (array of strings, optional)
-  - `updated` (array of strings, optional)
-  - `content` (string, optional) – content displayed (with title)
-  - `error` (string, optional)
+- Plain-text string only.
+- Read mode returns titled file content in plain text.
+- Write modes return readable created/updated summaries (including bullet lists for multiple files).
+- Validation and runtime failures return plain-text error messages.
 
 ## Constraints
 - Writes content exactly as provided.

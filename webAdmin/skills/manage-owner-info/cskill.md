@@ -13,11 +13,10 @@ Creates or updates `data/config/owner.md` with owner contact information. Typica
   - `read` (boolean, optional) – when true, returns current content
 
 ## Output Format
-- `object` with:
-  - `message` (string)
-  - `updated` (boolean, optional)
-  - `content` (string, optional)
-  - `error` (string, optional)
+- Plain-text string only.
+- Read mode returns current owner content as readable text.
+- Update/replace modes return readable status text and updated field details.
+- Validation and runtime failures return plain-text error messages.
 
 ## Constraints
 - Uses freeform text; updates only known prefix lines (Email:, Phone:, Calendar:, Meeting:).

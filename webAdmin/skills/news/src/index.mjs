@@ -39,7 +39,7 @@ export async function action({ promptText }) {
         payload = parseInput(promptText);
     } catch (error) {
         const message = error?.message || 'Invalid input.';
-        return { error: message, message };
+        return message;
     }
 
     const { limit = 5 } = payload;
@@ -65,10 +65,7 @@ export async function action({ promptText }) {
     );
 
     if (leadRecords.length === 0) {
-        return {
-            message: 'No leads found.',
-            leads: [],
-        };
+        return 'No leads found.';
     }
 
     leadRecords.sort((left, right) => right.timestamp - left.timestamp);
@@ -80,8 +77,14 @@ export async function action({ promptText }) {
         createdAt: String(leadRecord.leadInfo[LEAD_FIELDS.CREATED_AT] ?? '').trim() || toIsoTimestamp(new Date(leadRecord.timestamp)),
     }));
 
-    return {
-        message: `Retrieved ${recentLeads.length} recent lead${recentLeads.length === 1 ? '' : 's'}.`,
-        leads: recentLeads,
-    };
+    return [
+        `Retrieved ${recentLeads.length} recent lead${recentLeads.length === 1 ? '' : 's'}.`,
+        ...recentLeads.map((lead) => [
+            `- ${lead.leadId}`,
+            `  status: ${lead.status}`,
+            `  profile: ${lead.profile}`,
+            `  createdAt: ${lead.createdAt}`,
+            `  summary: ${lead.summary || '*None*'}`,
+        ].join('\n')),
+    ].join('\n');
 }

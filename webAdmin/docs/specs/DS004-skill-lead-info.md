@@ -13,17 +13,15 @@ A **cskill** executed through `MainAgent` when the owner requests details for a 
   - `leadId` (string): The ID of the lead.
 
 ## Output
-A JSON object containing:
-- `message` (string)
-- `info` (object) on success with:
-  - the contents of the lead file (`data/leads/{leadId}.md`)
-  - the contents of the corresponding split session files:
-    - `data/sessions/{sessionId}-profile.md`
-    - `data/sessions/{sessionId}-history.md`
-- `error` (string) on validation or lookup failure
+Plain-text string only:
+- success: readable report containing lead fields, contact info, summary, and related split session data:
+  - `data/leads/{leadId}.md`
+  - `data/sessions/{sessionId}-profile.md`
+  - `data/sessions/{sessionId}-history.md`
+- failure: deterministic error text on validation or lookup failure
 
 ## Execution Logic (Node.js)
 1. Read `data/leads/{leadId}.md`. If not found, return an error.
 2. Extract the `sessionId` from the lead file name or contents.
 3. Read `data/sessions/{sessionId}-profile.md` and `data/sessions/{sessionId}-history.md` when available.
-4. Return the combined data to the LLM so it can answer the admin's query completely.
+4. Return the combined data as readable text so the LLM can answer the admin's query completely.

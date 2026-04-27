@@ -8,10 +8,9 @@ Returns lead details and related session history. Typical triggers include `lead
   - `leadId` (string, required)
 
 ## Output Format
-- `object` with:
-  - `message` (string)
-  - `info` (object) on success
-  - `error` (string) on failure
+- Plain-text string only.
+- Success returns a readable lead/session report with key fields, contact info, summary, and session/history excerpts.
+- Validation and lookup failures return plain-text error messages.
 
 ## Constraints
 - Resolves the related session from lead data.

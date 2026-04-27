@@ -11,8 +11,8 @@ Skill runtime note:
 - They are discovered and registered from `webAdmin/skills/` by `MainAgent`.
 - Execution is routed through `MainAgent` skill execution APIs.
 - File persistence is handled through `MarkdownDataStore` (AchillesAgentLib) with numbered markdown sections (`### N. Section Name`).
-- Skill payloads expose domain data and optional `error` fields; they do not rely on `success` flags.
-- Skills also include `message` text fields so loop-session planners receive human-readable execution outcomes alongside structured data.
+- Skill outputs are plain-text only (success and failure paths) and do not use JSON envelopes.
+- Skills do not rely on `success` flags; status is communicated through deterministic text lines.
 - Owner requests are orchestrated by the `admin-flow` system prompt.
   - The system prompt returns a plain-text response string for the owner in structured, user-friendly formatting.
 

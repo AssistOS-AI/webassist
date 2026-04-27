@@ -26,6 +26,8 @@ test('manage-owner-info updates standard contact lines', async (t) => {
             meeting: 'https://cal.example.com/meet',
         }),
     });
+    assert.equal(typeof updateResult, 'string');
+    assert.match(updateResult, /Owner info updated\./);
 
     const content = await fs.readFile(path.join(configDir, 'owner.md'), 'utf8');
     assert.match(content, /Email: new@example\.com/);

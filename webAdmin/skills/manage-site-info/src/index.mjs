@@ -77,7 +77,7 @@ export async function action({ promptText }) {
         payload = parseInput(promptText);
     } catch (error) {
         const message = error?.message || 'Invalid input.';
-        return { error: message, message };
+        return message;
     }
 
     const store = getDataStore();
@@ -90,18 +90,21 @@ export async function action({ promptText }) {
         const name = readTarget;
         if (!name) {
             const message = 'fileName is required for read operations.';
-            return { error: message, message };
+            return message;
         }
         try {
             const result = await readInfoFile(store, name);
-            return {
-                message: `Loaded site info file ${result.fileName}.`,
-                content: `# ${result.fileName}\n\n${result.content.trim()}`,
-            };
+            return [
+                `Loaded site info file ${result.fileName}.`,
+                '',
+                `# ${result.fileName}`,
+                '',
+                result.content.trim(),
+            ].join('\n');
         } catch (error) {
             if (error && error.code === 'ENOENT') {
                 const message = `File not found: ${name}.md`;
-                return { error: message, message };
+                return message;
             }
             throw error;
         }
@@ -122,11 +125,17 @@ export async function action({ promptText }) {
             }
             index += 1;
         }
-        return {
-            message: `Processed ${created.length + updated.length} site info file${created.length + updated.length === 1 ? '' : 's'}.`,
-            created,
-            updated,
-        };
+        const total = created.length + updated.length;
+        const lines = [`Processed ${total} site info file${total === 1 ? '' : 's'}.`];
+        if (created.length > 0) {
+            lines.push('Created:');
+            lines.push(...created.map((fileName) => `- ${fileName}`));
+        }
+        if (updated.length > 0) {
+            lines.push('Updated:');
+            lines.push(...updated.map((fileName) => `- ${fileName}`));
+        }
+        return lines.join('\n');
     }
 
     if (typeof payload.content === 'string') {
@@ -134,7 +143,7 @@ export async function action({ promptText }) {
             || deriveNameFromContent(payload.promptText || payload.content, 1);
         if (!fileName) {
             const message = 'fileName is required.';
-            return { error: message, message };
+            return message;
         }
         const result = await writeInfoFile(store, dataDir, fileName, payload.content);
         if (result.created) {
@@ -142,13 +151,12 @@ export async function action({ promptText }) {
         } else {
             updated.push(result.fileName);
         }
-        return {
-            message: `${result.created ? 'Created' : 'Updated'} site info file ${result.fileName}.`,
-            created,
-            updated,
-        };
+        return [
+            `${result.created ? 'Created' : 'Updated'} site info file ${result.fileName}.`,
+            result.created ? `Created:\n- ${result.fileName}` : `Updated:\n- ${result.fileName}`,
+        ].join('\n');
     }
 
     const message = 'No action requested.';
-    return { error: message, message };
+    return message;
 }

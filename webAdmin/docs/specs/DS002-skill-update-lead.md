@@ -18,4 +18,6 @@ A **cskill** executed through `MainAgent` when the owner requests status updates
 2. Read the markdown file corresponding to the lead.
 3. Parse the markdown and replace the "Status:" line with the `newStatus` value.
 4. Write the file back to disk in `data/leads/`.
-5. Return a JSON object with `message` and updated lead payload on success, or `error` + `message` when the lead file is not found or status is invalid.
+5. Return a plain-text result on all paths:
+   - success: readable status update summary and core lead fields;
+   - failure: deterministic error text when lead file is missing or status is invalid.

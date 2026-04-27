@@ -9,11 +9,9 @@ Updates the lifecycle status of an existing lead. Typical triggers include `upda
   - `newStatus` (string, required; `invalid` | `contacted` | `converted`)
 
 ## Output Format
-- `object` with:
-  - `message` (string)
-  - `leadId` (string)
-  - `lead` (object)
-  - `error` (string) on validation or lookup failures
+- Plain-text string only.
+- Success returns a readable update confirmation with core lead fields.
+- Validation and lookup failures return plain-text error messages.
 
 ## Constraints
 - Rejects unknown lead ids and invalid statuses.

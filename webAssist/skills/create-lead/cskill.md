@@ -19,12 +19,9 @@ This skill is invoked by `visitor-flow` after qualification, not directly by use
 - `summary`: synthesized from profile-relevant facts and conversation progression recorded in `profileDetails`.
 
 ## Output Format
-- `object` with:
-  - `success` (boolean)
-  - `created` (boolean)
-  - `leadId` (string)
-  - `leadPath` (string)
-  - `lead` (object)
+- Plain-text string only.
+- Success returns a readable lead report (created/updated status, lead identifiers, contact info, summary, and persisted markdown snapshot).
+- Validation/runtime failures throw errors with deterministic text messages.
 
 ## Constraints
 - Lead id must be deterministic from `sessionId`.

@@ -18,6 +18,8 @@ test('manage-site-info writes and reads info files', async (t) => {
             content: 'Website overview content.',
         }),
     });
+    assert.equal(typeof writeResult, 'string');
+    assert.match(writeResult, /Created site info file overview\.md\./);
 
     const infoPath = path.join(sandbox.dataDir, 'info', 'overview.md');
     const stored = await fs.readFile(infoPath, 'utf8');
@@ -27,8 +29,9 @@ test('manage-site-info writes and reads info files', async (t) => {
         promptText: JSON.stringify({ fileName: 'overview' }),
     });
 
-    assert.match(readResult.content, /# overview\.md/);
-    assert.match(readResult.content, /Website overview content/);
+    assert.equal(typeof readResult, 'string');
+    assert.match(readResult, /# overview\.md/);
+    assert.match(readResult, /Website overview content/);
 });
 
 test('manage-site-info derives filename when missing', async (t) => {
@@ -42,5 +45,6 @@ test('manage-site-info derives filename when missing', async (t) => {
         }),
     });
 
-    assert.deepEqual(writeResult.created, ['frequently-asked-questions-for-the-product.md']);
+    assert.equal(typeof writeResult, 'string');
+    assert.match(writeResult, /Created:\n- frequently-asked-questions-for-the-product\.md/);
 });

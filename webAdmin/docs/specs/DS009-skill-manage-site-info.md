@@ -17,11 +17,10 @@ A **cskill** executed through `MainAgent` when the owner manages website info.
   - `promptText` (optional): source text used for filename derivation when explicit names are missing.
 
 ## Output
-- `message` (string)
-- `created` (array, optional) – filenames created
-- `updated` (array, optional) – filenames updated
-- `content` (string, optional) – when reading, returns `# filename.md` + file content
-- `error` (string, optional)
+Plain-text string only:
+- read mode: titled file content (`# filename.md` + content)
+- write modes: readable created/updated summary text (with bullet lists for multiple files)
+- validation/runtime failures: deterministic error text
 
 ## Execution Logic (Node.js)
 1. If `fileName` (or `readFile`) is provided without write payload, read the file and return content prefixed with the filename.

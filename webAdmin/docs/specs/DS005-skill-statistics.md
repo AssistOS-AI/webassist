@@ -13,15 +13,12 @@ A **cskill** executed through `MainAgent` when asked for statistics or reports.
   - `interval` (string): The time interval to report. Allowed values: `day`, `week`, `month`, `year`.
 
 ## Output
-A JSON object containing:
-- `message` (string)
-- `totalSessions`: Total number of active/past sessions created in the interval.
-- `totalLeads`: Total number of leads created in the interval.
-- `leadsByProfile`: An object mapping profile names to their respective counts (e.g., `{"Developer": 5, "Client": 2}`).
-- `error` (string) on input validation failures
+Plain-text string only:
+- success: readable metrics report with `interval`, window bounds, `totalSessions`, `totalLeads`, and `leadsByProfile` lines.
+- failure: deterministic error text on input validation failures.
 
 ## Execution Logic (Node.js)
 1. Determine the start and end dates based on the requested `interval`.
 2. Scan the `data/sessions/` directory. For this iteration, use file creation/modification times (or parse dates inside if implemented) to count sessions within the interval.
 3. Scan the `data/leads/` directory. Parse the files created within the interval to calculate `totalLeads` and aggregate `leadsByProfile`.
-4. Return the calculated statistics.
+4. Return the calculated statistics as readable plain text.

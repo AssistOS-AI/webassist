@@ -159,7 +159,7 @@ export async function action({ promptText }) {
         payload = parseInput(promptText);
     } catch (error) {
         const message = error?.message || 'Invalid input.';
-        return { error: message, message };
+        return message;
     }
 
     const {
@@ -182,17 +182,19 @@ export async function action({ promptText }) {
             .map((file) => stripExtension(`${file}.md`))
             .filter(Boolean)
             .sort((left, right) => left.localeCompare(right));
-        return {
-            message: profiles.length === 0
-                ? 'No profiles found.'
-                : `Retrieved ${profiles.length} profile${profiles.length === 1 ? '' : 's'}.`,
-            profiles,
-        };
+        if (profiles.length === 0) {
+            return 'No profiles found.';
+        }
+
+        return [
+            `Retrieved ${profiles.length} profile${profiles.length === 1 ? '' : 's'}:`,
+            ...profiles.map((name) => `- ${name}`),
+        ].join('\n');
     }
 
     const normalizedProfileName = normalizeProfileFileName(profileName);
     if (!normalizedProfileName.ok) {
-        return { error: normalizedProfileName.error, message: normalizedProfileName.error };
+        return normalizedProfileName.error;
     }
 
     const existingFileName = await findExistingProfileFile(profilesDir, normalizedProfileName.fileName);
@@ -201,37 +203,40 @@ export async function action({ promptText }) {
     if (!hasWritePayload) {
         if (!existingFileName) {
             const message = `Profile not found: ${profileName}`;
-            return { error: message, message };
+            return message;
         }
 
         const normalizedSections = normalizeSectionLabels(sections);
         if (!normalizedSections.ok) {
-            return { error: normalizedSections.error, message: normalizedSections.error };
+            return normalizedSections.error;
         }
         const sectionNames = resolveSectionNames(normalizedSections.labels);
         const profileData = sectionNames
             ? await store.getFile(DATASTORE_TYPES.PROFILES_INFO, fileName, sectionNames)
             : await store.getFile(DATASTORE_TYPES.PROFILES_INFO, fileName);
 
-        return {
-            message: `Profile ${stripExtension(`${fileName}.md`)} loaded.`,
-            profileName: stripExtension(`${fileName}.md`),
-            content: renderSections(profileData.sections),
-            sectionsDisplayed: profileData.sections.map((section) => section.name),
-        };
+        const sectionLabels = profileData.sections.map((section) => section.name);
+        const renderedSections = renderSections(profileData.sections);
+        return [
+            `Profile ${stripExtension(`${fileName}.md`)} loaded.`,
+            'Sections displayed:',
+            ...sectionLabels.map((label) => `- ${label}`),
+            '',
+            renderedSections,
+        ].join('\n').trim();
     }
 
     const normalizedCharacteristics = normalizeStringList(characteristics, 'characteristics');
     if (!normalizedCharacteristics.ok) {
-        return { error: normalizedCharacteristics.error, message: normalizedCharacteristics.error };
+        return normalizedCharacteristics.error;
     }
     const normalizedInterests = normalizeStringList(interests, 'interests');
     if (!normalizedInterests.ok) {
-        return { error: normalizedInterests.error, message: normalizedInterests.error };
+        return normalizedInterests.error;
     }
     const normalizedCriteria = normalizeStringList(qualifyingCriteria, 'qualifyingCriteria');
     if (!normalizedCriteria.ok) {
-        return { error: normalizedCriteria.error, message: normalizedCriteria.error };
+        return normalizedCriteria.error;
     }
 
     try {
@@ -256,16 +261,23 @@ export async function action({ promptText }) {
     });
     const profilePath = path.join(profilesDir, `${fileName}.md`);
 
-    return {
-        message: `${existingFileName ? 'Updated' : 'Created'} profile ${fileName}.md.`,
-        created: !existingFileName,
-        updated: Boolean(existingFileName),
-        profileName: `${fileName}.md`,
-        profilePath,
-        profile: {
-            characteristics: normalizedCharacteristics.items,
-            interests: normalizedInterests.items,
-            qualifyingCriteria: normalizedCriteria.items,
-        },
-    };
+    const header = `${existingFileName ? 'Updated' : 'Created'} profile ${fileName}.md.`;
+    const lines = [header, `Profile path: ${profilePath}`];
+
+    lines.push('Characteristics:');
+    lines.push(...(normalizedCharacteristics.items.length > 0
+        ? normalizedCharacteristics.items.map((item) => `- ${item}`)
+        : ['- *None*']));
+
+    lines.push('Interests:');
+    lines.push(...(normalizedInterests.items.length > 0
+        ? normalizedInterests.items.map((item) => `- ${item}`)
+        : ['- *None*']));
+
+    lines.push('Qualifying criteria:');
+    lines.push(...(normalizedCriteria.items.length > 0
+        ? normalizedCriteria.items.map((item) => `- ${item}`)
+        : ['- *None*']));
+
+    return lines.join('\n');
 }

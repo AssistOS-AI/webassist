@@ -29,8 +29,10 @@ test('statistics filters sessions and leads by the requested interval', async (t
         promptText: JSON.stringify({ interval: 'month' }),
         referenceDate,
     });
-    assert.equal(result.stats.totalSessions, 1);
-    assert.equal(result.stats.totalLeads, 1);
-    assert.equal(result.stats.leadsByProfile.Developer, 1);
-    assert.equal(result.stats.leadsByProfile.EnterpriseClient, undefined);
+    assert.equal(typeof result, 'string');
+    assert.match(result, /Statistics computed for interval month\./);
+    assert.match(result, /Total Sessions: 1/);
+    assert.match(result, /Total Leads: 1/);
+    assert.match(result, /- Developer: 1/);
+    assert.doesNotMatch(result, /EnterpriseClient/);
 });

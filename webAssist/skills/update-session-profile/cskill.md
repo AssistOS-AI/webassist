@@ -11,9 +11,9 @@ Updates session profile memory with the latest profiling data.
   - `contactInformation` (object, optional)
 
 ## Output Format
-- `object` with:
-  - `sessionId` (string)
-  - `updated` (boolean)
+- Plain-text string only.
+- Success returns a readable persistence summary for the session profile.
+- Validation/runtime failures throw errors with deterministic text messages.
 
 ## Constraints
 - Persists profile memory through runtime `updateSessionProfile`.

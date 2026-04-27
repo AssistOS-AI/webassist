@@ -68,7 +68,7 @@ export async function action({ promptText, referenceDate = new Date() }) {
         payload = parseInput(promptText);
     } catch (error) {
         const message = error?.message || 'Invalid input.';
-        return { error: message, message };
+        return message;
     }
 
     const { interval } = payload;
@@ -78,7 +78,7 @@ export async function action({ promptText, referenceDate = new Date() }) {
         window = getIntervalStart(interval, referenceDate);
     } catch (error) {
         const message = error?.message || 'Invalid interval.';
-        return { error: message, message };
+        return message;
     }
 
     const sessionListing = await store.listFiles(DATASTORE_TYPES.SESSIONS);
@@ -113,15 +113,18 @@ export async function action({ promptText, referenceDate = new Date() }) {
         }
     }
 
-    return {
-        message: `Statistics computed for interval ${interval}.`,
-        stats: {
-            interval,
-            windowStart: window.start.toISOString(),
-            windowEnd: window.end.toISOString(),
-            totalSessions,
-            totalLeads,
-            leadsByProfile,
-        },
-    };
+    const lines = [
+        `Statistics computed for interval ${interval}.`,
+        `Interval: ${interval}`,
+        `Window Start: ${window.start.toISOString()}`,
+        `Window End: ${window.end.toISOString()}`,
+        `Total Sessions: ${totalSessions}`,
+        `Total Leads: ${totalLeads}`,
+        'Leads By Profile:',
+    ];
+    const profileEntries = Object.entries(leadsByProfile).sort((left, right) => left[0].localeCompare(right[0]));
+    lines.push(...(profileEntries.length > 0
+        ? profileEntries.map(([profile, count]) => `- ${profile}: ${count}`)
+        : ['- *None*']));
+    return lines.join('\n');
 }

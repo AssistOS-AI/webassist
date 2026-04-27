@@ -21,9 +21,10 @@ test('manage-profile creates or updates profiles case-insensitively', async (t) 
         }),
     });
 
-    assert.equal(result.created, true);
-    assert.equal(result.updated, false);
-    assert.equal(result.profileName, 'Developer.md');
+    assert.equal(typeof result, 'string');
+    assert.match(result, /Created profile Developer\.md\./);
+    assert.match(result, /Characteristics:/);
+    assert.match(result, /- API-focused/);
 
     const profilePath = path.join(sandbox.dataDir, 'profilesInfo', 'Developer.md');
     const content = await fs.readFile(profilePath, 'utf8');
@@ -43,9 +44,8 @@ test('manage-profile creates or updates profiles case-insensitively', async (t) 
         }),
     });
 
-    assert.equal(updated.created, false);
-    assert.equal(updated.updated, true);
-    assert.equal(updated.profileName, 'Developer.md');
+    assert.equal(typeof updated, 'string');
+    assert.match(updated, /Updated profile Developer\.md\./);
 
     const updatedContent = await fs.readFile(profilePath, 'utf8');
     assert.match(updatedContent, /- Revised profile/);
@@ -74,19 +74,26 @@ test('manage-profile lists profiles and displays one profile with optional secti
     const listed = await action({
         promptText: JSON.stringify({}),
     });
-    assert.deepEqual(listed.profiles, ['Developer', 'EnterpriseClient']);
+    assert.equal(typeof listed, 'string');
+    assert.match(listed, /Retrieved 2 profiles:/);
+    assert.match(listed, /- Developer/);
+    assert.match(listed, /- EnterpriseClient/);
 
     const displayed = await action({
         promptText: JSON.stringify({ profileName: 'Developer' }),
     });
-    assert.equal(displayed.profileName, 'Developer');
-    assert.match(displayed.content, /## Characteristics/);
-    assert.match(displayed.content, /- API-focused/);
-    assert.deepEqual(displayed.sectionsDisplayed, ['Characteristics', 'Interests', 'Qualifying criteria']);
+    assert.equal(typeof displayed, 'string');
+    assert.match(displayed, /Profile Developer loaded\./);
+    assert.match(displayed, /Sections displayed:/);
+    assert.match(displayed, /- Characteristics/);
+    assert.match(displayed, /## Characteristics/);
+    assert.match(displayed, /- API-focused/);
 
     const filtered = await action({
         promptText: JSON.stringify({ profileName: 'Developer', sections: ['Interests'] }),
     });
-    assert.match(filtered.content, /## Interests/);
-    assert.deepEqual(filtered.sectionsDisplayed, ['Interests']);
+    assert.equal(typeof filtered, 'string');
+    assert.match(filtered, /Sections displayed:/);
+    assert.match(filtered, /- Interests/);
+    assert.match(filtered, /## Interests/);
 });
