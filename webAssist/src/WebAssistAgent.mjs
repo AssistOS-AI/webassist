@@ -27,10 +27,12 @@ function buildBaseAgentOptions({ agentRoot, logger, mainAgentOptions }) {
     };
 }
 
-function buildRuntimePrompt({ message, loadedContext }) {
+function buildRuntimePrompt({ sessionId, message, loadedContext }) {
     return [
         'User message:',
         String(message),
+        'Session ID:',
+        String(sessionId),
         'Session profile:',
         JSON.stringify(loadedContext.sessionProfile ?? {}, null, 2),
         'Current lead:',
@@ -65,7 +67,6 @@ export async function createWebAssistAgent({
     }));
     if (llmAgent) {
         mainAgent.llmAgent = llmAgent;
-        mainAgent.subsystemFactory.setLLMAgent(llmAgent);
     }
 
     return {
@@ -88,12 +89,12 @@ export async function createWebAssistAgent({
                 sessionId,
             });
             const runtimePrompt = buildRuntimePrompt({
+                sessionId,
                 message,
                 loadedContext,
             });
 
             const execution = await mainAgent.executePrompt(runtimePrompt, {
-                sessionId,
                 model: mode,
                 systemPrompt: VISITOR_FLOW_SYSTEM_PROMPT,
             });

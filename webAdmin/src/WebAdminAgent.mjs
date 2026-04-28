@@ -88,7 +88,6 @@ export async function createWebAdminAgent({
     }));
     if (llmAgent) {
         mainAgent.llmAgent = llmAgent;
-        mainAgent.subsystemFactory.setLLMAgent(llmAgent);
     }
 
     return {
@@ -113,7 +112,6 @@ export async function createWebAdminAgent({
                 referenceDate,
             });
             const execution = await mainAgent.executePrompt(runtimePrompt, {
-                ...(sessionId ? { sessionId } : {}),
                 model: mode,
                 systemPrompt: ADMIN_FLOW_SYSTEM_PROMPT,
             });
