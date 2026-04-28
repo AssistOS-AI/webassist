@@ -1,6 +1,7 @@
 {
     "container": "node:20-bullseye",
     "lite-sandbox": true,
+    "guest": true,
     "profiles": {
         "default": {
             "env": [
