@@ -22,5 +22,4 @@ yarn-error.log*
 Thumbs.db
 # >>> ploinky default-skills >>>
 .claude/skills/
-.agents/skills/
 # <<< ploinky default-skills <<<
