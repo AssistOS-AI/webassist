@@ -1,22 +1,24 @@
-# webAssist Agent Guide
+# webassist/webAdmin Agent Guide
 
 ## Scope
 
-webAssist is a guest-enabled visitor assistant that profiles visitors, maintains session context, converts leads, and offers meeting scheduling through Achilles skills.
+webassist/webAdmin is the admin companion agent for the standalone webassist repository.
 
 ## Mandatory Reading Order
 
 1. Read the nearest parent `AGENTS.md` for workspace-wide rules.
 2. Read `docs/index.html` for the local documentation entry point.
 3. Read `docs/specs/matrix.md` and the relevant local DS files before changing behavior.
-4. Read `docs/specs/DS012-ploinky-runtime-invariants.md` before touching auth, routing, guest access, MCP, HTTP services, files, logs, or runtime configuration.
-5. Read `AGENTS.md` for local coding style, module structure, and test-organization rules when a dedicated coding-style DS file does not exist; otherwise inherit the parent repository coding-style authority.
+4. Read `docs/specs/DS011-ploinky-runtime-invariants.md` before touching auth, routing, guest access, MCP, HTTP services, files, logs, or runtime configuration.
+5. Read `../../AGENTS.md` for coding style, module structure, and test-organization rules when that file exists; otherwise inherit the parent repository coding-style authority.
 
 ## Current Skill Catalog
 
-- skills/create-lead
-- skills/book-meeting
-- skills/update-session-profile
+- skills/manage-owner-info
+- skills/manage-profile
+- skills/manage-site-info
+- skills/statistics
+- skills/update-lead
 
 ## Repository Rules
 
@@ -31,12 +33,12 @@ webAssist is a guest-enabled visitor assistant that profiles visitors, maintains
 
 ## Runtime Defaults
 
-Uses `node:20-bullseye`, `lite-sandbox: true`, `src/index.mjs`, and Achilles `MainAgent` skills.
+Uses `node:20-bullseye`, `lite-sandbox: true`, and `src/index.mjs`.
 
 ## Key Paths
 
 - `manifest.json`
-- `docs/specs/DS012-ploinky-runtime-invariants.md`
+- `docs/specs/DS011-ploinky-runtime-invariants.md`
 - `src/`
 - `skills/`
 - `tests/`
