@@ -31,7 +31,7 @@ webAssist is a guest-enabled visitor assistant that profiles visitors, maintains
 
 ## Runtime Defaults
 
-Uses `node:20-bullseye`, `lite-sandbox: true`, `src/index.mjs`, and Achilles `MainAgent` skills.
+Uses `node:24.15.0-bullseye`, `lite-sandbox: true`, `src/index.mjs`, and Achilles `MainAgent` skills.
 
 ## Key Paths
 

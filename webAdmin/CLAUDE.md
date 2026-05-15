@@ -33,7 +33,7 @@ webassist/webAdmin is the admin companion agent for the standalone webassist rep
 
 ## Runtime Defaults
 
-Uses `node:20-bullseye`, `lite-sandbox: true`, and `src/index.mjs`.
+Uses `node:24.15.0-bullseye`, `lite-sandbox: true`, and `src/index.mjs`.
 
 ## Key Paths
 

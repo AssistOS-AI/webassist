@@ -30,7 +30,7 @@ webassist/webAssist is the standalone visitor assistant agent in the webassist r
 
 ## Runtime Defaults
 
-Uses `node:20-bullseye`, `lite-sandbox: true`, and `src/index.mjs`.
+Uses `node:24.15.0-bullseye`, `lite-sandbox: true`, and `src/index.mjs`.
 
 ## Key Paths
 
